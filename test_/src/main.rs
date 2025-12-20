@@ -1,4 +1,7 @@
 use std::io::stdin;
+use game_engine::utils::sdl_utils::*;
+
+use std::time::Duration;
 
 pub mod events {
     use log::info;
@@ -28,11 +31,24 @@ fn stdin_fun() -> i64 {
 fn main() {
     env_logger::init();
 
-    let stdin_var = stdin_fun as fn() -> i64;
+    /*let stdin_var = stdin_fun as fn() -> i64;
     events::add(test);
     events::add(stdin_var);
     game_engine::entry();
 
     game_engine::remove(0);
-    game_engine::entry();
+    game_engine::entry();*/
+
+    let mut context: Context = Context::new();
+    context.clear();
+    'running: loop {
+        for event in (&mut context).take(4) {
+            match event {
+                game_engine::event::Event::KeyDown => { break 'running },
+                _ => { println!("Hey") },
+            }
+        }
+        context.update();
+        ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
+    }
 }

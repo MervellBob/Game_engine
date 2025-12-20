@@ -1,11 +1,9 @@
 [package]
-name = "events"
+name = "utils"
 version = "0.1.0"
 edition = "2024"
 
-[features]
-override = []
-
 [dependencies]
-log = "0.4.29"
 sdl3 = "0.16.2"
+
+events = { path = "../events" }

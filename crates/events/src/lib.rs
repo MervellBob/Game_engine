@@ -1,6 +1,9 @@
 use log::info;
 use std::sync::Mutex;
 
+pub mod event;
+pub mod sdl;
+
 pub static ALL_EVENTS: Mutex<Vec<fn() -> i64>> = Mutex::new(Vec::new());
 
 #[cfg(not(feature = "override"))]

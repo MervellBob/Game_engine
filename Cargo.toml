@@ -5,4 +5,6 @@ edition = "2024"
 
 [dependencies]
 events = { path = "crates/events" }
+utils = { path = "crates/utils" }
 engine_core = { path = "crates/engine_core" }
+sdl3 = "0.16.2"
