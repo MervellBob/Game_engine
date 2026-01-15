@@ -1,28 +1,8 @@
 extern crate sdl3;
 
-use sdl3::pixels::Color;
-use std::time::Duration;
-
-pub enum WinEvent {
-    None,
-    Shown,
-    Hidden,
-    Exposed, //La zone de la fenêtre doit être redessinée (par ex. après avoir été obscurcie).
-    Moved(i32, i32),
-    Resized(i32, i32),
-    PixelSizeChanged(i32, i32), //Nouvelle taille en pixels du buffer de la fenêtre — utile avec les écrans à DPI élevé où la taille en pixels diffère de la taille logique.
-    Minimized,
-    Maximized,
-    Restored,
-    MouseEnter,
-    MouseLeave,
-    FocusGained,
-    FocusLost,
-    CloseRequested,
-    HitTest(i32, i32), //Coordonnées x, y locales — résultat d'un test de zone cliquable (pour gestion de zones non-client personnalisées). Souvent utilisé pour déterminer si une position correspond à bordures, barre de titre, etc.
-    ICCProfChanged, //Le profil ICC (profil couleur) de l'écran contenant la fenêtre a changé — utile pour recalculer la couleur / rendu.
-    DisplayChanged(i32),//L'index/ID de l'affichage lié à la fenêtre a changé (paramètre indiqué : nouvel index d'écran).
-}
+mod Events;
+use Events::*;
+use sdl3::event::WindowEvent as SdlWindowEvent;
 
 pub enum Event {
     Quit {
@@ -49,7 +29,7 @@ pub enum Event {
     WindowEvent {
         timestamp: u64,
         win_id: u32,
-        win_event:WinEvent,
+        win_event:SdlWindowEvent,
     },    
     MouseButtonDown {
         timestamp: u64,
@@ -618,22 +598,14 @@ pub fn main() {
 
     let mut canvas = window.into_canvas();
     canvas.present();
-    let mut event_pump = sdl_context.event_pump().unwrap();
-    'running: loop {
 
-        
-        for event in event_pump.poll_iter() {
-            println!("{:#?}",event);
-            match event {
-                sdl3::event::Event::Quit {..} |
-                sdl3::event::Event::KeyDown { keycode: Some(sdl3::keyboard::Keycode::Escape), .. } => {
-                    break 'running
-                },
-                _ => {}
-            }
-        }
-
-        // canvas.present();
-        ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
+    let mut event_manager:EventManager = EventManager::new();
+    event_manager.start_game_loop(sdl_context,canvas);
+    let mut test:EventQueue<WindowEvent> = event_manager.window_queue;
+    let event = test.pop();
+    match event {
+        None => {}
+        _ => { println!("last event:  {:#?}",event)}
     }
+
 }
