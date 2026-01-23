@@ -2,13 +2,14 @@ use std::collections::VecDeque;
 use sdl3::event::Event as SdlEvent;
 use sdl3::event::WindowEvent as SdlWindowEvent;
 use std::time::Duration;
+use num_enum::TryFromPrimitive;
+use bitflags::bitflags;
+use std::fmt;
 
 use sdl3::mouse::MouseState;
 use sdl3::mouse::MouseButton;
 use sdl3::mouse::MouseWheelDirection;
 use sdl3::keyboard::Mod;
-
-
 
 
 #[derive(Debug)]
@@ -160,9 +161,9 @@ pub enum InputEvent{
     KeyDown {
         timestamp: u64,
         window_id: u32,
-        //keycode: Option<Keycode>, //après interpretation OS (langue & all)
-       // scancode: Option<Scancode>,
-        //keymod: Mod,
+        keycode: Keycode, //après interpretation OS (langue & all)
+        scancode: Scancode,
+        keymod: Keymod,
         repeat: bool,
         which: u32, //which periphérique
         raw: u16,
@@ -170,16 +171,17 @@ pub enum InputEvent{
     KeyUp {
         timestamp: u64,
         window_id: u32,
-        //keycode: Option<Keycode>,
-        //scancode: Option<Scancode>,
-        //keymod: Mod,
+        keycode: Keycode,
+        scancode: Scancode,
+        keymod: Keymod,
         repeat: bool,
         which: u32,
         raw: u16,
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, TryFromPrimitive)]
+#[repr(u32)]
 pub enum Keycode {
     ScancodeMask = 1_073_741_824,
     Unknown = 0,
@@ -433,7 +435,8 @@ pub enum Keycode {
     EndCall = 1_073_742_114,
 }
 
-#[derive(Debug)]
+#[derive(Debug, TryFromPrimitive)]
+#[repr(u32)]
 pub enum Scancode {
     Unknown = 0,
     A = 4,
@@ -686,9 +689,38 @@ pub enum Scancode {
     Count = 512,
 }
 
+
+bitflags! {
+    #[derive(Debug, Copy, Clone, PartialEq)]
+    pub struct Keymod : u16 {
+        const NOMOD = 0x0000;
+        const LSHIFTMOD = 0x0001;
+        const RSHIFTMOD = 0x0002;
+        const LCTRLMOD = 0x0040;
+        const RCTRLMOD = 0x0080;
+        const LALTMOD = 0x0100;
+        const RALTMOD = 0x0200;
+        const LGUIMOD = 0x0400;
+        const RGUIMOD = 0x0800;
+        const NUMMOD = 0x1000;
+        const CAPSMOD = 0x2000;
+        const MODEMOD = 0x4000;
+        const RESERVEDMOD = 0x8000;
+    }
+}
+
+impl fmt::Display for Keymod {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:04x}", *self)
+    }
+} 
+
+
+#[derive(Debug)]
 pub struct EventQueue<T> {
     queue: VecDeque<T>,
 }
+
 
 impl<T> EventQueue<T> {
     pub fn new() -> Self { Self { queue: VecDeque::new() } }
@@ -727,15 +759,11 @@ impl EventManager {
         while game_running {
 
             for event in event_pump.poll_iter() {
+                
                 game_running = game_running && self.match_event_types(event);
             }
-
-            let event = self.window_events_queue.pop();
-            match event {
-                None => {}
-                _ => { println!(" I am cathcing this event muy boy{:#?}",event)}
-            }
-
+            //println!(" I am cathcing this event muy boy{:#?}",self.input_events_queue);
+  
             canvas.present();
             ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 20));
             // Sleep is not accurate in timing it has a 1ms to 15 ms overshoot apparently, and 1/20th of a sec is ~50 ms 
@@ -846,9 +874,9 @@ impl EventManager {
                 let input_event:InputEvent = InputEvent::KeyDown{
                     timestamp,
                     window_id,
-                    //keycode, //après interpretation OS (langue & all)
-                    //scancode,
-                    //keymod,
+                    keycode : self.parse_SDL_keycode(keycode, timestamp), //après interpretation OS (langue & all)
+                    scancode : self.parse_SDL_scancode(scancode, timestamp),
+                    keymod: Keymod::from_bits_retain(keymod.bits()),
                     repeat,
                     which, //which periphérique
                     raw,
@@ -859,9 +887,9 @@ impl EventManager {
                 let input_event:InputEvent = InputEvent::KeyUp{
                     timestamp,
                     window_id,
-                    //keycode, //après interpretation OS (langue & all)
-                    //scancode,
-                    //keymod,
+                    keycode : self.parse_SDL_keycode(keycode, timestamp), //après interpretation OS (langue & all)
+                    scancode : self.parse_SDL_scancode(scancode, timestamp),
+                    keymod: Keymod::from_bits_retain(keymod.bits()),
                     repeat,
                     which, //which periphérique
                     raw,
@@ -1015,5 +1043,31 @@ impl EventManager {
             _ => {}
         }
         return true
+    }
+
+    //Paradigm choice for now: No keycode value -> mapped to unknown value
+    fn parse_SDL_keycode(& self, sdl_keycode: Option<sdl3::keyboard::Keycode> , timestamp:u64) -> Keycode {
+        let keycode_u32 = if let Some(k) = sdl_keycode {
+            let v = k as u32;
+            v
+        } else {
+            println!("key pressed without keycode, timestamp = {:?}", timestamp);
+            0
+        };
+        let keycode = Keycode::try_from(keycode_u32).unwrap_or(Keycode::Unknown);
+        return keycode
+    }
+
+    //Paradigm choice for now: No scancode value -> mapped to unknown value
+    fn parse_SDL_scancode(& self, sdl_scancode: Option<sdl3::keyboard::Scancode>, timestamp:u64) -> Scancode {
+        let scancode_u32 = if let Some(k) = sdl_scancode {
+            let v = k as u32;
+            v
+        } else {
+            println!("key pressed without keycode, timestamp = {:?}", timestamp);
+            0
+        };
+        let scancode = Scancode::try_from(scancode_u32).unwrap_or(Scancode::Unknown);
+        return scancode
     }
 }
