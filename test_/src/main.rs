@@ -1,7 +1,7 @@
 extern crate sdl3;
 
-mod Events;
-use Events::*;
+mod events;
+use events::*;
 
 //Basic main event catcher for testing purposes
 pub fn main() {

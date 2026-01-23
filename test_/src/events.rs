@@ -9,10 +9,10 @@ use std::fmt;
 use sdl3::mouse::MouseState;
 use sdl3::mouse::MouseButton;
 use sdl3::mouse::MouseWheelDirection;
-use sdl3::keyboard::Mod;
 
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum AppEvent{
     Quit {
         timestamp: u64,
@@ -38,6 +38,7 @@ pub enum AppEvent{
 }
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum WindowEvent {
     None {
         timestamp: u64,
@@ -119,6 +120,7 @@ pub enum WindowEvent {
 }
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum InputEvent{
     MouseMotion {
         timestamp: u64,
@@ -731,9 +733,9 @@ impl<T> EventQueue<T> {
 
     pub fn is_empty(&mut self) -> bool {self.queue.is_empty()}
 
-    pub fn get(&self,index:usize) -> Option<&T> {self.queue.get(index)}
+    // pub fn get(&self,index:usize) -> Option<&T> {self.queue.get(index)}
 
-    pub fn get_mut(&mut self,index:usize) -> Option<&mut T> {self.queue.get_mut(index)}
+    // pub fn get_mut(&mut self,index:usize) -> Option<&mut T> {self.queue.get_mut(index)}
 
 }
 
@@ -762,8 +764,10 @@ impl EventManager {
                 
                 game_running = game_running && self.match_event_types(event);
             }
-            //println!(" I am cathcing this event muy boy{:#?}",self.input_events_queue);
-  
+            self.input_events_queue.pop();
+            self.app_events_queue.pop();
+            self.window_events_queue.pop();
+
             canvas.present();
             ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 20));
             // Sleep is not accurate in timing it has a 1ms to 15 ms overshoot apparently, and 1/20th of a sec is ~50 ms 
@@ -874,8 +878,8 @@ impl EventManager {
                 let input_event:InputEvent = InputEvent::KeyDown{
                     timestamp,
                     window_id,
-                    keycode : self.parse_SDL_keycode(keycode, timestamp), //après interpretation OS (langue & all)
-                    scancode : self.parse_SDL_scancode(scancode, timestamp),
+                    keycode : self.parse_sdl_keycode(keycode, timestamp), //après interpretation OS (langue & all)
+                    scancode : self.parse_sdl_scancode(scancode, timestamp),
                     keymod: Keymod::from_bits_retain(keymod.bits()),
                     repeat,
                     which, //which periphérique
@@ -887,8 +891,8 @@ impl EventManager {
                 let input_event:InputEvent = InputEvent::KeyUp{
                     timestamp,
                     window_id,
-                    keycode : self.parse_SDL_keycode(keycode, timestamp), //après interpretation OS (langue & all)
-                    scancode : self.parse_SDL_scancode(scancode, timestamp),
+                    keycode : self.parse_sdl_keycode(keycode, timestamp), //après interpretation OS (langue & all)
+                    scancode : self.parse_sdl_scancode(scancode, timestamp),
                     keymod: Keymod::from_bits_retain(keymod.bits()),
                     repeat,
                     which, //which periphérique
@@ -1046,7 +1050,7 @@ impl EventManager {
     }
 
     //Paradigm choice for now: No keycode value -> mapped to unknown value
-    fn parse_SDL_keycode(& self, sdl_keycode: Option<sdl3::keyboard::Keycode> , timestamp:u64) -> Keycode {
+    fn parse_sdl_keycode(& self, sdl_keycode: Option<sdl3::keyboard::Keycode> , timestamp:u64) -> Keycode {
         let keycode_u32 = if let Some(k) = sdl_keycode {
             let v = k as u32;
             v
@@ -1059,7 +1063,7 @@ impl EventManager {
     }
 
     //Paradigm choice for now: No scancode value -> mapped to unknown value
-    fn parse_SDL_scancode(& self, sdl_scancode: Option<sdl3::keyboard::Scancode>, timestamp:u64) -> Scancode {
+    fn parse_sdl_scancode(& self, sdl_scancode: Option<sdl3::keyboard::Scancode>, timestamp:u64) -> Scancode {
         let scancode_u32 = if let Some(k) = sdl_scancode {
             let v = k as u32;
             v
