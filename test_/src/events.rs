@@ -717,7 +717,6 @@ impl fmt::Display for Keymod {
     }
 } 
 
-
 #[derive(Debug)]
 pub struct EventQueue<T> {
     queue: VecDeque<T>,
@@ -878,8 +877,8 @@ impl EventManager {
                 let input_event:InputEvent = InputEvent::KeyDown{
                     timestamp,
                     window_id,
-                    keycode : self.parse_sdl_keycode(keycode, timestamp), //après interpretation OS (langue & all)
-                    scancode : self.parse_sdl_scancode(scancode, timestamp),
+                    keycode : self.map_sdl_keycode(keycode, timestamp), //après interpretation OS (langue & all)
+                    scancode : self.map_sdl_scancode(scancode, timestamp),
                     keymod: Keymod::from_bits_retain(keymod.bits()),
                     repeat,
                     which, //which periphérique
@@ -891,8 +890,8 @@ impl EventManager {
                 let input_event:InputEvent = InputEvent::KeyUp{
                     timestamp,
                     window_id,
-                    keycode : self.parse_sdl_keycode(keycode, timestamp), //après interpretation OS (langue & all)
-                    scancode : self.parse_sdl_scancode(scancode, timestamp),
+                    keycode : self.map_sdl_keycode(keycode, timestamp), //après interpretation OS (langue & all)
+                    scancode : self.map_sdl_scancode(scancode, timestamp),
                     keymod: Keymod::from_bits_retain(keymod.bits()),
                     repeat,
                     which, //which periphérique
@@ -1050,7 +1049,7 @@ impl EventManager {
     }
 
     //Paradigm choice for now: No keycode value -> mapped to unknown value
-    fn parse_sdl_keycode(& self, sdl_keycode: Option<sdl3::keyboard::Keycode> , timestamp:u64) -> Keycode {
+    fn map_sdl_keycode(& self, sdl_keycode: Option<sdl3::keyboard::Keycode> , timestamp:u64) -> Keycode {
         let keycode_u32 = if let Some(k) = sdl_keycode {
             let v = k as u32;
             v
@@ -1063,7 +1062,7 @@ impl EventManager {
     }
 
     //Paradigm choice for now: No scancode value -> mapped to unknown value
-    fn parse_sdl_scancode(& self, sdl_scancode: Option<sdl3::keyboard::Scancode>, timestamp:u64) -> Scancode {
+    fn map_sdl_scancode(& self, sdl_scancode: Option<sdl3::keyboard::Scancode>, timestamp:u64) -> Scancode {
         let scancode_u32 = if let Some(k) = sdl_scancode {
             let v = k as u32;
             v
