@@ -6,11 +6,6 @@ use num_enum::TryFromPrimitive;
 use bitflags::bitflags;
 use std::fmt;
 
-use sdl3::mouse::MouseState;
-use sdl3::mouse::MouseButton;
-use sdl3::mouse::MouseWheelDirection;
-
-
 #[derive(Debug)]
 #[allow(dead_code)]
 pub enum AppEvent{
@@ -126,7 +121,7 @@ pub enum InputEvent{
         timestamp: u64,
         window_id: u32,
         which: u32,
-        mousestate: MouseState,
+        mouse_buttons: MouseButtonState,
         x: f32,
         y: f32,
         xrel: f32,
@@ -136,7 +131,7 @@ pub enum InputEvent{
         timestamp: u64,
         window_id: u32,
         which: u32,
-        mouse_btn: MouseButton,
+        mouse_button: MouseButton,
         clicks: u8,
         x: f32,
         y: f32,
@@ -145,7 +140,7 @@ pub enum InputEvent{
         timestamp: u64,
         window_id: u32,
         which: u32,
-        mouse_btn: MouseButton,
+        mouse_button: MouseButton,
         clicks: u8,
         x: f32,
         y: f32,
@@ -180,6 +175,36 @@ pub enum InputEvent{
         which: u32,
         raw: u16,
     }
+}
+
+#[derive(Copy, Clone, Debug)]
+#[allow(dead_code)]
+pub struct MouseButtonState {
+    pub left: bool,
+    pub right: bool,
+    pub middle: bool,
+    pub x1: bool,
+    pub x2: bool,
+}
+
+#[derive(Debug,TryFromPrimitive)]
+#[repr(u8)]
+#[allow(dead_code)]
+pub enum MouseButton {
+    Unknown = 0,
+    Left = 1,
+    Middle = 2,
+    Right = 3,
+    X1 = 4,
+    X2 = 5,
+}
+
+// Certain mice or trackpad can have an inverted mousewheel apparently
+#[derive(Debug)]
+pub enum MouseWheelDirection {
+    Normal,
+    Flipped,
+    Unknown,
 }
 
 #[derive(Debug, TryFromPrimitive)]
@@ -828,7 +853,7 @@ impl EventManager {
                     timestamp,
                     window_id,
                     which,
-                    mousestate,
+                    mouse_buttons: self.map_sdl_mousestate(&mousestate),
                     x,
                     y,
                     xrel,
@@ -841,7 +866,7 @@ impl EventManager {
                     timestamp,
                     window_id,
                     which,
-                    mouse_btn,
+                    mouse_button: MouseButton::try_from(mouse_btn as u8).unwrap_or(MouseButton::Unknown),
                     clicks,
                     x,
                     y,
@@ -853,7 +878,7 @@ impl EventManager {
                     timestamp,
                     window_id,
                     which,
-                    mouse_btn,
+                    mouse_button: MouseButton::try_from(mouse_btn as u8).unwrap_or(MouseButton::Unknown),
                     clicks,
                     x,
                     y,
@@ -861,16 +886,19 @@ impl EventManager {
                 self.input_events_queue.push(input_event)
             }
             SdlEvent::MouseWheel {timestamp,window_id,which,x,y,direction,mouse_x,mouse_y} => {
+            println!("{:#?}",direction);
+
                 let input_event:InputEvent = InputEvent::MouseWheel{
                     timestamp,
                     window_id,
                     which,
                     x,
                     y,
-                    direction,
+                    direction: self.map_sdl_mousewheel_direction(direction),
                     mouse_x,
                     mouse_y,
                 };
+                println!("{:#?}",input_event);
                 self.input_events_queue.push(input_event)
             }
             SdlEvent::KeyDown {timestamp,window_id,keycode,scancode,keymod,repeat,which,raw} => {
@@ -1048,29 +1076,43 @@ impl EventManager {
         return true
     }
 
+    fn map_sdl_mousestate(& self, ms: &sdl3::mouse::MouseState) -> MouseButtonState {
+        MouseButtonState {
+            left: ms.left(),
+            right: ms.right(),
+            middle: ms.middle(),
+            x1: ms.x1(),
+            x2: ms.x2(),
+        }
+    }
+
+    pub fn map_sdl_mousewheel_direction(& self ,direction: sdl3::mouse::MouseWheelDirection) -> MouseWheelDirection {
+        match direction {
+            sdl3::mouse::MouseWheelDirection::Normal => MouseWheelDirection::Normal,
+            sdl3::mouse::MouseWheelDirection::Flipped => MouseWheelDirection::Flipped,
+            _ => MouseWheelDirection::Unknown,
+        }
+    }
+
     //Paradigm choice for now: No keycode value -> mapped to unknown value
     fn map_sdl_keycode(& self, sdl_keycode: Option<sdl3::keyboard::Keycode> , timestamp:u64) -> Keycode {
-        let keycode_u32 = if let Some(k) = sdl_keycode {
-            let v = k as u32;
-            v
-        } else {
-            println!("key pressed without keycode, timestamp = {:?}", timestamp);
-            0
-        };
-        let keycode = Keycode::try_from(keycode_u32).unwrap_or(Keycode::Unknown);
-        return keycode
+        match sdl_keycode {
+            Some(k) => Keycode::try_from(k as u32).unwrap_or(Keycode::Unknown),
+            None => {
+                println!("key pressed without keycode, timestamp = {:?}", timestamp);
+                Keycode::Unknown
+            }
+        }
     }
 
     //Paradigm choice for now: No scancode value -> mapped to unknown value
     fn map_sdl_scancode(& self, sdl_scancode: Option<sdl3::keyboard::Scancode>, timestamp:u64) -> Scancode {
-        let scancode_u32 = if let Some(k) = sdl_scancode {
-            let v = k as u32;
-            v
-        } else {
-            println!("key pressed without keycode, timestamp = {:?}", timestamp);
-            0
-        };
-        let scancode = Scancode::try_from(scancode_u32).unwrap_or(Scancode::Unknown);
-        return scancode
+        match sdl_scancode {
+            Some(k) => Scancode::try_from(k as u32).unwrap_or(Scancode::Unknown),
+            None => {
+                println!("key pressed without scancode, timestamp = {:?}", timestamp);
+                Scancode::Unknown
+            }
+        }
     }
 }
