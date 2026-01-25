@@ -1,7 +1,7 @@
-pub enum Event {
-    Quit,
-    AppTerminating,
-    KeyDown,
-    KeyUp,
-    Unknow,
-}
+// pub enum Event {
+//     Quit,
+//     AppTerminating,
+//     KeyDown,
+//     KeyUp,
+//     Unknow,
+// }

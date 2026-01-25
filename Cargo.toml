@@ -7,4 +7,4 @@ edition = "2024"
 events = { path = "crates/events" }
 utils = { path = "crates/utils" }
 engine_core = { path = "crates/engine_core" }
-sdl3 = "0.16.2"
+sdl3 = "=0.17.3"
