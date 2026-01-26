@@ -5,7 +5,7 @@ use events::sdl_binding::event_manager::EventManager;
 use tracing::{info, info_span};
 use tracing_subscriber::fmt::format::FmtSpan;
 
-//Basic main event catcher for testing purposes
+/// App that creates an SDL window and launches a game loop via the sql_binding crate.
 pub fn main() {
 
     init_tracing_subscriber();
@@ -35,6 +35,8 @@ pub fn main() {
     info!("application closed")
 }
 
+
+/// Basic function that creates a default tracing subscribe that outputs only in the console
 fn init_tracing_subscriber() {
 
     tracing_subscriber::fmt()

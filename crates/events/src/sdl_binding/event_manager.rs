@@ -17,7 +17,9 @@ use super::input_events::MouseButtonState;
 use super::input_events::MouseButton; 
 
 
-
+/// # Temporary Event Storage
+///
+/// This struct is used for temporarily storing events in a `VecDeque`.
 #[derive(Debug)]
 pub struct EventQueue<T> {
     queue: VecDeque<T>,
@@ -37,6 +39,12 @@ impl<T> EventQueue<T> {
     // pub fn get_mut(&mut self,index:usize) -> Option<&mut T> {self.queue.get_mut(index)}
 }
 
+/// # Event Manager
+///
+/// This struct manages events for SQL bindings by mapping `sql3` events
+/// to the game engine's internal event system and storing them in a dedicated event queue.
+///
+/// It is also currently used to launch the main game loop.
 pub struct EventManager {
     pub app_events_queue:EventQueue<AppEvent>,
     pub window_events_queue:EventQueue<WindowEvent>,
@@ -52,6 +60,10 @@ impl EventManager {
         }
     }
 
+    /// # Temporary Launch Method
+    ///
+    /// This temporary method is used to start the main game loop
+    /// and initiate the binding of events between SDL and the game engine.
     pub fn start_game_loop(&mut self, sdl_context:sdl3::Sdl, mut canvas:sdl3::render::WindowCanvas) {
         
         let loop_span = info_span!(
@@ -78,6 +90,9 @@ impl EventManager {
         }
     }
 
+    /// # Event Matching Function
+    ///
+    /// This method matches events from SQL to the game engine's internal event system.
     fn match_event_types(&mut self, event:sdl3::event::Event) -> bool {
         match event {
             SdlEvent::Window {timestamp,window_id,win_event} => {
@@ -209,6 +224,10 @@ impl EventManager {
         return true
     }
 
+    /// # Window Event Matching Function
+    ///
+    /// This method matches window-related events from SQL
+    /// to the game engine's internal event system.
     fn match_window_events(&mut self, timestamp:u64, window_id:u32, window_event:SdlWindowEvent) -> bool {
         match window_event {
             SdlWindowEvent::None => { 
@@ -354,6 +373,9 @@ impl EventManager {
         return true
     }
 
+    /// # Mouse State Mapping Method
+    ///
+    /// This method maps SDL mouse states to the game engine's internal mouse button states.
     fn map_sdl_mousestate(& self, ms: &sdl3::mouse::MouseState) -> MouseButtonState {
         MouseButtonState {
             left: ms.left(),
@@ -364,7 +386,10 @@ impl EventManager {
         }
     }
 
-    pub fn map_sdl_mousewheel_direction(& self ,direction: sdl3::mouse::MouseWheelDirection) -> MouseWheelDirection {
+    /// # Mouse Wheel Direction Mapping Method
+    ///
+    /// This method maps SDL wheel directions to the game engine's internal wheel direction.
+    fn map_sdl_mousewheel_direction(& self ,direction: sdl3::mouse::MouseWheelDirection) -> MouseWheelDirection {
         match direction {
             sdl3::mouse::MouseWheelDirection::Normal => MouseWheelDirection::Normal,
             sdl3::mouse::MouseWheelDirection::Flipped => MouseWheelDirection::Flipped,
@@ -372,7 +397,13 @@ impl EventManager {
         }
     }
 
-    //Paradigm choice for now: When there is no keycode value -> mapped to unknown value
+ 
+    /// # Keycode Mapping Method
+    ///
+    /// This method maps SDL keycodes to the game engine's internal keycodes.
+    /// 
+    /// **Current paradigm:** If an SDL keycode does not have a corresponding internal value,
+    /// it is mapped to an `Unknown` keycode.
     fn map_sdl_keycode(& self, sdl_keycode: Option<sdl3::keyboard::Keycode> , timestamp:u64) -> Keycode {
         match sdl_keycode {
             Some(k) => Keycode::try_from(k as u32).unwrap_or(Keycode::Unknown),
@@ -383,7 +414,12 @@ impl EventManager {
         }
     }
 
-    //Paradigm choice for now: When there is no scancode value -> mapped to unknown value
+    /// # Scancode Mapping Method
+    ///
+    /// This method maps SDL scancodes to the game engine's internal scancodes.
+    ///
+    /// **Current paradigm:** If an SDL scancode does not have a corresponding internal value,
+    /// it is mapped to `Unknown`.
     fn map_sdl_scancode(& self, sdl_scancode: Option<sdl3::keyboard::Scancode>, timestamp:u64) -> Scancode {
         match sdl_scancode {
             Some(k) => Scancode::try_from(k as u32).unwrap_or(Scancode::Unknown),

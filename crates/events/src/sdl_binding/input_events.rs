@@ -2,7 +2,10 @@ use std::fmt;
 use bitflags::bitflags;
 use num_enum::TryFromPrimitive;
 
-
+/// # User Input Event Enum
+///
+/// This enum represents all events related to user input,
+/// more specifically mouse and keyboard interactions.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum InputEvent{
     MouseMotion {
@@ -65,6 +68,10 @@ pub enum InputEvent{
     }
 }
 
+/// # Mouse Button State
+///
+/// This struct stores the state of a mouse button,
+/// using a boolean value to indicate whether it is pressed (`true`) or not (`false`).
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct MouseButtonState {
     pub left: bool,
@@ -74,6 +81,10 @@ pub struct MouseButtonState {
     pub x2: bool,
 }
 
+/// # Mouse Button Enum
+///
+/// This enum represents the different mouse buttons,
+/// used to identify which button triggered a mouse action.
 #[derive(Debug, Copy, Clone, PartialEq,TryFromPrimitive)]
 #[repr(u8)]
 pub enum MouseButton {
@@ -85,7 +96,10 @@ pub enum MouseButton {
     X2 = 5,
 }
 
-// Certain mice or trackpad can have an inverted mousewheel apparently
+/// # Mouse Wheel Direction Enum
+///
+/// Some mice or trackpads may have an inverted scroll wheel.
+/// This enum represents the direction of the mouse wheel to handle such cases correctly.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum MouseWheelDirection {
     Normal,
@@ -93,6 +107,7 @@ pub enum MouseWheelDirection {
     Unknown,
 }
 
+/// Enum that stores every keycode
 #[derive(Debug, Copy, Clone, PartialEq, TryFromPrimitive)]
 #[repr(u32)]
 pub enum Keycode {
@@ -348,6 +363,7 @@ pub enum Keycode {
     EndCall = 1_073_742_114,
 }
 
+/// Enum that stores every scancode
 #[derive(Debug, Copy, Clone, PartialEq, TryFromPrimitive)]
 #[repr(u32)]
 pub enum Scancode {
@@ -602,7 +618,11 @@ pub enum Scancode {
     Count = 512,
 }
 
+
 bitflags! {
+    /// # Key Modifier Flags
+    ///
+    /// This bitflag struct represents key modifiers such as Shift, Control, Numpad, and others.
     #[derive(Debug, Copy, Clone, PartialEq)]
     pub struct Keymod : u16 {
         const NOMOD = 0x0000;

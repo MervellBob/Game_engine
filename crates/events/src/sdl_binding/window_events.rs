@@ -1,4 +1,7 @@
 
+/// # Window Event Enum
+///
+/// This enum represents all possible types of events related to the application window.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum WindowEvent {
     None {

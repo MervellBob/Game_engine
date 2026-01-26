@@ -1,4 +1,7 @@
-
+/// # App Event Enum
+///
+/// This enum defines all possible events related to the application itself,
+/// such as closing, entering the foreground, or moving to the background.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum AppEvent{
     Quit {
