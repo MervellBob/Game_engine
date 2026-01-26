@@ -1,6 +1,8 @@
 use std::collections::VecDeque;
 use sdl3::event::Event as SdlEvent;
 use sdl3::event::WindowEvent as SdlWindowEvent;
+use tracing::info;
+use tracing::info_span;
 use std::time::Duration;
 
 
@@ -51,6 +53,13 @@ impl EventManager {
     }
 
     pub fn start_game_loop(&mut self, sdl_context:sdl3::Sdl, mut canvas:sdl3::render::WindowCanvas) {
+        
+        let loop_span = info_span!(
+        "Event loop",
+        );
+        let _enter = loop_span.enter();
+            info!("Staring event game loop");
+
         let mut event_pump = sdl_context.event_pump().unwrap();
         let mut game_running = true;
         while game_running {
@@ -320,6 +329,7 @@ impl EventManager {
  
                 };
             self.window_events_queue.push(window_event);
+            info!("Close app requested");
             return false //TEMPORARY
             }
             SdlWindowEvent::HitTest (x,y) => { 
