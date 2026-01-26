@@ -8,4 +8,7 @@ override = []
 
 [dependencies]
 log = "0.4.29"
-sdl3 = "0.16.2"
+bitflags = "2.10.0"
+num_enum = "0.7.5"
+sdl3 = "=0.17.3"
+tracing = "0.1.44"

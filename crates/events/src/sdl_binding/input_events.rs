@@ -1,61 +1,28 @@
-extern crate sdl3;
+use std::fmt;
+use bitflags::bitflags;
+use num_enum::TryFromPrimitive;
 
-use sdl3::pixels::Color;
-use std::time::Duration;
-
-pub enum WinEvent {
-    None,
-    Shown,
-    Hidden,
-    Exposed, //La zone de la fenêtre doit être redessinée (par ex. après avoir été obscurcie).
-    Moved(i32, i32),
-    Resized(i32, i32),
-    PixelSizeChanged(i32, i32), //Nouvelle taille en pixels du buffer de la fenêtre — utile avec les écrans à DPI élevé où la taille en pixels diffère de la taille logique.
-    Minimized,
-    Maximized,
-    Restored,
-    MouseEnter,
-    MouseLeave,
-    FocusGained,
-    FocusLost,
-    CloseRequested,
-    HitTest(i32, i32), //Coordonnées x, y locales — résultat d'un test de zone cliquable (pour gestion de zones non-client personnalisées). Souvent utilisé pour déterminer si une position correspond à bordures, barre de titre, etc.
-    ICCProfChanged, //Le profil ICC (profil couleur) de l'écran contenant la fenêtre a changé — utile pour recalculer la couleur / rendu.
-    DisplayChanged(i32),//L'index/ID de l'affichage lié à la fenêtre a changé (paramètre indiqué : nouvel index d'écran).
-}
-
-pub enum Event {
-    Quit {
+/// # User Input Event Enum
+///
+/// This enum represents all events related to user input,
+/// more specifically mouse and keyboard interactions.
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum InputEvent{
+    MouseMotion {
         timestamp: u64,
+        window_id: u32,
+        which: u32,
+        mouse_buttons: MouseButtonState,
+        x: f32,
+        y: f32,
+        xrel: f32,
+        yrel: f32,
     },
-    AppTerminating {
-        timestamp: u64,
-    },
-    AppLowMemory {
-        timestamp: u64,
-    },
-    AppWillEnterBackground {
-        timestamp: u64,
-    },
-    AppDidEnterBackground {
-        timestamp: u64,
-    },
-    AppWillEnterForeground {
-        timestamp: u64,
-    },
-    AppDidEnterForeground {
-        timestamp: u64,
-    },
-    WindowEvent {
-        timestamp: u64,
-        win_id: u32,
-        win_event:WinEvent,
-    },    
     MouseButtonDown {
         timestamp: u64,
         window_id: u32,
         which: u32,
-        //mouse_btn: MouseButton,
+        mouse_button: MouseButton,
         clicks: u8,
         x: f32,
         y: f32,
@@ -64,7 +31,7 @@ pub enum Event {
         timestamp: u64,
         window_id: u32,
         which: u32,
-        //mouse_btn: MouseButton,
+        mouse_button: MouseButton,
         clicks: u8,
         x: f32,
         y: f32,
@@ -75,16 +42,16 @@ pub enum Event {
         which: u32,
         x: f32,
         y: f32,
-        //direction: MouseWheelDirection,
+        direction: MouseWheelDirection,
         mouse_x: f32,
         mouse_y: f32,
     },
     KeyDown {
         timestamp: u64,
         window_id: u32,
-        keycode: Option<Keycode>, //après interpretation OS (langue & all)
-        scancode: Option<Scancode>,
-        //keymod: Mod,
+        keycode: Keycode, //après interpretation OS (langue & all)
+        scancode: Scancode,
+        keymod: Keymod,
         repeat: bool,
         which: u32, //which periphérique
         raw: u16,
@@ -92,15 +59,57 @@ pub enum Event {
     KeyUp {
         timestamp: u64,
         window_id: u32,
-        keycode: Option<Keycode>,
-        scancode: Option<Scancode>,
-        //keymod: Mod,
+        keycode: Keycode,
+        scancode: Scancode,
+        keymod: Keymod,
         repeat: bool,
         which: u32,
         raw: u16,
     }
 }
 
+/// # Mouse Button State
+///
+/// This struct stores the state of a mouse button,
+/// using a boolean value to indicate whether it is pressed (`true`) or not (`false`).
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub struct MouseButtonState {
+    pub left: bool,
+    pub right: bool,
+    pub middle: bool,
+    pub x1: bool,
+    pub x2: bool,
+}
+
+/// # Mouse Button Enum
+///
+/// This enum represents the different mouse buttons,
+/// used to identify which button triggered a mouse action.
+#[derive(Debug, Copy, Clone, PartialEq,TryFromPrimitive)]
+#[repr(u8)]
+pub enum MouseButton {
+    Unknown = 0,
+    Left = 1,
+    Middle = 2,
+    Right = 3,
+    X1 = 4,
+    X2 = 5,
+}
+
+/// # Mouse Wheel Direction Enum
+///
+/// Some mice or trackpads may have an inverted scroll wheel.
+/// This enum represents the direction of the mouse wheel to handle such cases correctly.
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum MouseWheelDirection {
+    Normal,
+    Flipped,
+    Unknown,
+}
+
+/// Enum that stores every keycode
+#[derive(Debug, Copy, Clone, PartialEq, TryFromPrimitive)]
+#[repr(u32)]
 pub enum Keycode {
     ScancodeMask = 1_073_741_824,
     Unknown = 0,
@@ -354,6 +363,9 @@ pub enum Keycode {
     EndCall = 1_073_742_114,
 }
 
+/// Enum that stores every scancode
+#[derive(Debug, Copy, Clone, PartialEq, TryFromPrimitive)]
+#[repr(u32)]
 pub enum Scancode {
     Unknown = 0,
     A = 4,
@@ -606,34 +618,31 @@ pub enum Scancode {
     Count = 512,
 }
 
-//Basic main event catcher for testing purposes
-pub fn main() {
-    let sdl_context = sdl3::init().unwrap();
-    let video_subsystem = sdl_context.video().unwrap();
 
-    let window = video_subsystem.window("rust-sdl3 demo", 800, 600)
-        .position_centered()
-        .build()
-        .unwrap();
-
-    let mut canvas = window.into_canvas();
-    canvas.present();
-    let mut event_pump = sdl_context.event_pump().unwrap();
-    'running: loop {
-
-        
-        for event in event_pump.poll_iter() {
-            println!("{:#?}",event);
-            match event {
-                sdl3::event::Event::Quit {..} |
-                sdl3::event::Event::KeyDown { keycode: Some(sdl3::keyboard::Keycode::Escape), .. } => {
-                    break 'running
-                },
-                _ => {}
-            }
-        }
-
-        // canvas.present();
-        ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
+bitflags! {
+    /// # Key Modifier Flags
+    ///
+    /// This bitflag struct represents key modifiers such as Shift, Control, Numpad, and others.
+    #[derive(Debug, Copy, Clone, PartialEq)]
+    pub struct Keymod : u16 {
+        const NOMOD = 0x0000;
+        const LSHIFTMOD = 0x0001;
+        const RSHIFTMOD = 0x0002;
+        const LCTRLMOD = 0x0040;
+        const RCTRLMOD = 0x0080;
+        const LALTMOD = 0x0100;
+        const RALTMOD = 0x0200;
+        const LGUIMOD = 0x0400;
+        const RGUIMOD = 0x0800;
+        const NUMMOD = 0x1000;
+        const CAPSMOD = 0x2000;
+        const MODEMOD = 0x4000;
+        const RESERVEDMOD = 0x8000;
     }
 }
+
+impl fmt::Display for Keymod {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:04x}", *self)
+    }
+} 
