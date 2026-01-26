@@ -430,3 +430,56 @@ impl EventManager {
         }
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use sdl3::keyboard::Scancode as SdlScancode;
+    use sdl3::keyboard::Keycode as SdlKeycode;
+    use sdl3::mouse::MouseWheelDirection as SdlMouseDirection;
+
+    #[test]
+    fn map_sdl_scancode_valid_code() {
+        let manager = EventManager::new();
+        assert_eq!(manager.map_sdl_scancode(Some(SdlScancode::A),123), Scancode::A,"Mapping of scancode A failed");
+        assert_eq!(manager.map_sdl_scancode(Some(SdlScancode::CapsLock),456), Scancode::CapsLock,"Mapping of scancode CapsLock failed");
+    }
+    #[test]
+    fn map_sdl_scancode_none() {
+        let manager = EventManager::new();
+        assert_eq!(manager.map_sdl_scancode(None,111), Scancode::Unknown,"Mapping of scancode 'None' failed");
+    }
+
+
+
+    #[test]
+    fn map_sdl_keycode_valid_code() {
+        let manager = EventManager::new();
+        assert_eq!(manager.map_sdl_keycode(Some(SdlKeycode::A),123), Keycode::A,"Mapping of Keycode A failed");
+        assert_eq!(manager.map_sdl_keycode(Some(SdlKeycode::CapsLock),456), Keycode::CapsLock,"Mapping of Keycode CapsLock failed");
+    }
+    #[test]
+    fn map_sdl_keycode_none() {
+        let manager = EventManager::new();
+        assert_eq!(manager.map_sdl_keycode(None,111), Keycode::Unknown,"Mapping of Keycode 'None' failed");
+    }
+
+
+
+    #[test]
+    fn map_sdl_mousewheel_direction_normal() {
+        let manager = EventManager::new();
+        assert_eq!(manager.map_sdl_mousewheel_direction(SdlMouseDirection::Normal), MouseWheelDirection::Normal,"Mapping of mousewheel direction normal failed");
+    }
+    #[test]
+    fn map_sdl_mousewheel_direction_flipped() {
+        let manager = EventManager::new();
+        assert_eq!(manager.map_sdl_mousewheel_direction(SdlMouseDirection::Flipped), MouseWheelDirection::Flipped,"Mapping of mousewheel direction flipped failed");
+    }
+    #[test]
+    fn map_sdl_mousewheel_direction_unknown() {
+        let manager = EventManager::new();
+        assert_eq!(manager.map_sdl_mousewheel_direction(SdlMouseDirection::Unknown(12)), MouseWheelDirection::Unknown,"Mapping of mousewheel direction unknown failed");
+    }
+}
