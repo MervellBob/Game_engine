@@ -7,5 +7,4 @@ edition = "2024"
 override = []
 
 [dependencies]
-log = "0.4.29"
 events = { path = "../events" }
