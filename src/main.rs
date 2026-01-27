@@ -1,5 +1,3 @@
-
-
 use sdl3;
 use events::sdl_binding::event_manager::EventManager;
 use tracing::{info, info_span};
