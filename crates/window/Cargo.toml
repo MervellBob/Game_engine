@@ -1,5 +1,5 @@
 [package]
-name = "engine_core"
+name = "window"
 version = "0.1.0"
 edition = "2024"
 
@@ -7,7 +7,5 @@ edition = "2024"
 override = []
 
 [dependencies]
-events = { path = "../events" }
-window = { path = "../window" }
+sdl3 = "=0.17.3"
 tracing = "0.1.44"
-
