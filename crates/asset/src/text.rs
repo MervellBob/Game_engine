@@ -27,9 +27,9 @@ impl Asset for Text {
 #[cfg(test)]
 mod tests_text {
 
-    use std::fs::File;
-    use crate::text::Text;
     use crate::asset::Asset;
+    use crate::text::Text;
+    use std::fs::File;
 
     #[test]
     fn text_file_1() {
@@ -43,9 +43,10 @@ mod tests_text {
 
         let content: String = String::from_utf8(text.contents_raw).expect("Found invalid UTF-8");
 
-        assert_eq!(content,
-                   res_content,
-                   "Expected:^{}$\nGot:^{}$", res_content, content
+        assert_eq!(
+            content, res_content,
+            "Expected:^{}$\nGot:^{}$",
+            res_content, content
         );
     }
 }
