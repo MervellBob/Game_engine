@@ -1,0 +1,2 @@
+[env]
+TEXT_FILE_1 = {value = "../../assets/text/Rimbaud.txt", relative = true}
