@@ -1,2 +1,3 @@
 [env]
 TEXT_FILE_1 = {value = "../../assets/text/Rimbaud.txt", relative = true}
+PNG_FILE_1 = {value = "../../assets/png/icon_Flav20.png", relative = true}
