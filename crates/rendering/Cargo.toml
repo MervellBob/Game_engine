@@ -1,0 +1,13 @@
+[package]
+name = "rendering"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+override = []
+
+[dependencies]
+tracing = "0.1.44"
+asset = { path = "../asset" }
+gl = "0.14.0"
+
