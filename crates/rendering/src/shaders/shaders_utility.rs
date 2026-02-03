@@ -1,9 +1,10 @@
-use std::fmt::format;
 use std::fs::File;
 use asset::asset::Asset;
 use asset::text::Text;
 use std::collections::HashMap;
 use std::ffi::CString;
+use tracing::{Level, error, info, span};
+
 
 /// **Shader**
 ///
@@ -58,9 +59,11 @@ impl Shader {
     /// - Panics if shader compilation fails, providing the compilation log.
     /// - Panics if program linking fails, providing the link log.
     pub fn new() -> Self {
+        let span = span!(Level::INFO, "Creating new shader program");
+        let _enter = span.enter();
+
         let vertex_path = format!("{}/src/shaders/test_shader/vertex_1.glsl", env!("CARGO_MANIFEST_DIR"));
         let fragment_path: String = format!("{}/src/shaders/test_shader/fragment_1.glsl", env!("CARGO_MANIFEST_DIR"));
-
 
         let vertex_shader = Self::compile_shader(&vertex_path,gl::VERTEX_SHADER);
         let fragment_shader = Self::compile_shader(&fragment_path,gl::FRAGMENT_SHADER);
@@ -91,16 +94,51 @@ impl Shader {
     /// This function uses raw OpenGL calls (`gl::CreateShader`, `gl::ShaderSource`, `gl::CompileShader`) 
     /// and assumes a valid OpenGL context is active.
     fn compile_shader(shader_path: &str, shader_type: u32) -> u32 {
-        let error_string = format(format_args!("Unable to open shader file: {}", shader_path));
-        let file = File::open(shader_path).expect(&error_string);
+        let shader_type_str = match shader_type {
+            gl::VERTEX_SHADER => "VERTEX",
+            gl::FRAGMENT_SHADER => "FRAGMENT",
+            gl::GEOMETRY_SHADER => "GEOMETRY", // si tu en utilises
+            _ => "UNKNOWN",
+        };
+
+
+        let span = tracing::span!(tracing::Level::INFO, "Compiling shader", path = shader_path, shader_type = shader_type_str);
+        let _enter = span.enter();
+
+        // Attempt to open the file
+        let file = match File::open(shader_path) {
+            Ok(f) => {
+                info!("Shader file opened successfully");
+                f
+            },
+            Err(e) => {
+                error!("Unable to open shader file {}: {}", shader_path, e);
+                panic!();
+            }
+        };
+
         let mut file: Text = Text::new(file);
         file.read_raw();
-        let shader_content = String::from_utf8(file.contents_raw).expect("Found invalid UTF-8");
-
+        let shader_content = match String::from_utf8(file.contents_raw) {
+            Ok(s) => {
+                info!("Shader content accessed successfully");
+                s
+            }
+            Err(e) => {
+                error!("Found invalid UTF-8 in shader file{}: {}", shader_path, e);
+                panic!();
+            }
+        };
 
         unsafe {
             let shader = gl::CreateShader(shader_type);
-            assert_ne!(shader, 0, "Failed to create shader");
+            if shader == 0 {
+                error!("Failed to create OpenGL shader object");
+                panic!();
+            } else {
+                info!(shader = shader, shader_type = shader_type_str, "Shader object created");
+            }
+
 
             gl::ShaderSource(
                 shader,
@@ -111,6 +149,7 @@ impl Shader {
 
             gl::CompileShader(shader);
             Self::check_compile_error(shader, "NOT PROGRAM");
+            info!(shader = shader,shader_type = shader_type_str, "Shader compiled successfully");
             shader
         }
     }
@@ -133,9 +172,12 @@ impl Shader {
     ///
     /// # Notes
     /// - The function deletes the attached shaders after linking to free GPU resources.
-    fn create_program(vertex_shader:u32,fragment_shader:u32) -> u32 {
+    fn create_program(vertex_shader:u32,fragment_shader:u32) -> u32 {  
         unsafe {
             let shader_program = gl::CreateProgram();
+            let span = tracing::span!(tracing::Level::INFO, "Linking program", shader_program = shader_program);
+            let _enter = span.enter();
+
             gl::AttachShader(shader_program, vertex_shader);
             gl::AttachShader(shader_program, fragment_shader);
             gl::LinkProgram(shader_program);
@@ -188,7 +230,8 @@ impl Shader {
                         log.as_mut_ptr().cast(),
                         );
                         let log = String::from_utf8_lossy(&log);
-                        panic!("Program Link Error:\n{}" , log);
+                        error!("Program link error:\n {}", log);
+                        panic!();
                     }
                 }
             }
@@ -209,7 +252,8 @@ impl Shader {
                         );
 
                         let log = String::from_utf8_lossy(&log);
-                        panic!("Shader Compile Error:\n{}" , log);
+                        error!("Shader compile error:\n {}", log);
+                        panic!();
                     }
                 }
             }
