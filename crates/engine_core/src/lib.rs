@@ -1,9 +1,9 @@
 use tracing::{info, info_span};
-use window::window_handler::window_handler::WindowHandler;
 use events::sdl_binding::event_manager::EventManager;
 use events::sdl_binding::window_events::WindowEvent;
 use std::time::Duration;
 use rendering::shaders::shaders_utility::Shader;
+use rendering::window_handler::window_handler::WindowHandler;
 
 
 /// Entry point of the engine core.
