@@ -9,3 +9,5 @@ override = []
 [dependencies]
 sdl3 = "=0.17.3"
 tracing = "0.1.44"
+gl = "0.14.0"
+

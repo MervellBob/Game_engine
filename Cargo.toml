@@ -8,6 +8,8 @@ events = { path = "crates/events" }
 utils = { path = "crates/utils" }
 engine_core = { path = "crates/engine_core" }
 window = { path = "crates/window" }
+rendering = {path = "crates/rendering"}
+asset = { path= "crates/asset"}
 sdl3 = "=0.17.3"
 log = "0.4.29"
 tracing-log = "0.2.0"

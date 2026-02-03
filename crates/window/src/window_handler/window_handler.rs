@@ -1,8 +1,10 @@
+use std::ffi::c_void;
 use sdl3::EventPump;
-use sdl3::render::Canvas;
+use sdl3::video::GLProfile;
 use sdl3::video::Window;
 use sdl3::Sdl;
 use sdl3::VideoSubsystem;
+use sdl3::video::GLContext;
 
 /// Handles the creation and management of the main game window.
 ///
@@ -23,10 +25,10 @@ pub struct WindowHandler {
     window_height: u32,
     sdl_context: Sdl,
     video_subsystem: VideoSubsystem,
-    canvas: Canvas<Window>,
     sdl_event_pump: EventPump,
+    window: Window,
+    gl_context: GLContext,
 }
-
 impl WindowHandler {
     /// Creates a new `WindowHandler` with the specified name and dimensions.
     ///
@@ -41,14 +43,27 @@ impl WindowHandler {
         let sdl_context = sdl3::init().unwrap();
         let video_subsystem = sdl_context.video().unwrap();
 
+        {
+            let gl_attr = video_subsystem.gl_attr();
+            gl_attr.set_context_profile(GLProfile::Core);
+            gl_attr.set_context_version(3, 3);
+        }
+
         let window = video_subsystem
             .window(&name, width, height)
             .position_centered()
+            .opengl()
             .build()
             .unwrap();
 
-        let mut canvas = window.into_canvas();
-        canvas.present();
+        let gl_context = window.gl_create_context().unwrap();
+        
+        gl::load_with(|s| {
+        video_subsystem
+            .gl_get_proc_address(s)
+            .map(|f| f as *const c_void)
+            .unwrap_or(std::ptr::null())
+        }); 
 
         let event_pump = sdl_context.event_pump().unwrap();
 
@@ -58,8 +73,9 @@ impl WindowHandler {
             window_height: height,
             sdl_context,
             video_subsystem,
-            canvas,
             sdl_event_pump: event_pump,
+            window: window,
+            gl_context: gl_context
         }
     }
 
@@ -74,16 +90,22 @@ impl WindowHandler {
     pub fn window_height(&self) -> u32 {
         self.window_height
     }
-    pub fn canvas(&mut self) -> &mut Canvas<Window> {
-        &mut self.canvas
+    pub fn window(&mut self) -> &mut Window {
+        &mut self.window
     }
     pub fn event_pump(&mut self) -> &mut EventPump {
         &mut self.sdl_event_pump
     }
-    pub fn context(&self) -> &Sdl {
+    pub fn sdl_context(&self) -> &Sdl {
         &self.sdl_context
+    }
+    pub fn gl_context(&self) -> &GLContext {
+        &self.gl_context
     }
     pub fn video_subsystem(&self) -> &VideoSubsystem {
         &self.video_subsystem
     }
 }
+
+
+
