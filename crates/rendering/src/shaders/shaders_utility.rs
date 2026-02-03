@@ -5,6 +5,34 @@ use asset::text::Text;
 use std::collections::HashMap;
 use std::ffi::CString;
 
+/// **Shader**
+///
+/// A utility structure for managing OpenGL shaders.  
+/// This struct **encapsulates shader compilation and program linking**, 
+/// and provides convenient methods for **setting and caching uniform variables**.
+///
+/// # Purpose
+/// The `Shader` struct is designed to simplify the workflow of OpenGL shader management:
+/// - Compile vertex and fragment shaders from source or file
+/// - Link them into a program
+/// - Track uniform locations efficiently to avoid repeated `glGetUniformLocation` calls
+///
+/// # Examples
+/// ```ignore
+/// // Create a shader program from predefined shader files
+/// let shader = Shader::new();
+/// shader.use_program();
+/// shader.set_float("someUniform", 0.5);
+/// ```
+///
+/// # Panics
+/// - Panics if shader compilation fails, providing the compilation log.
+/// - Panics if program linking fails, providing the linking log.
+///
+/// # Notes
+/// - Uniform locations are **cached internally** for performance.
+/// - Intended for use with OpenGL 3.3 core profile.
+/// - The struct does **not handle shader reloading**; create a new instance for updated shaders.
 pub struct Shader {
     pub program_id:u32, 
     uniforms: HashMap<String, i32>,
@@ -12,6 +40,23 @@ pub struct Shader {
 }
 
 impl Shader {
+
+    /// **Creates a new `Shader` instance.**
+    ///
+    /// This constructor compiles the vertex and fragment shaders located in 
+    /// the `src/shaders/test_shader/` directory and links them into an OpenGL shader program.  
+    /// The resulting `Shader` object holds the `program_id` and initializes a uniform cache.
+    ///
+    /// # Behavior
+    /// - Loads shader source files from the project directory using `CARGO_MANIFEST_DIR`.
+    /// - Compiles the vertex shader (`vertex_1.glsl`) and fragment shader (`fragment_1.glsl`).
+    /// - Links the shaders into a program, storing the resulting `program_id`.
+    /// - Initializes an empty `HashMap` to cache uniform locations.
+    ///
+    /// # Panics
+    /// - Panics if a shader file cannot be opened.
+    /// - Panics if shader compilation fails, providing the compilation log.
+    /// - Panics if program linking fails, providing the link log.
     pub fn new() -> Self {
         let vertex_path = format!("{}/src/shaders/test_shader/vertex_1.glsl", env!("CARGO_MANIFEST_DIR"));
         let fragment_path: String = format!("{}/src/shaders/test_shader/fragment_1.glsl", env!("CARGO_MANIFEST_DIR"));
@@ -28,6 +73,23 @@ impl Shader {
         }
     }
 
+    /// **Compiles a shader from a source file.**
+    ///
+    /// This function reads a GLSL shader source file from the provided `shader_path` and compiles it 
+    /// into an OpenGL shader object of the specified `shader_type` (e.g., `gl::VERTEX_SHADER` or `gl::FRAGMENT_SHADER`).
+    ///
+    /// # Returns
+    /// Returns the `u32` ID of the compiled shader object.
+    ///
+    /// # Panics
+    /// - Panics if the shader file cannot be opened or read.
+    /// - Panics if the file contains invalid UTF-8.
+    /// - Panics if OpenGL fails to create the shader object.
+    /// - Panics if shader compilation fails, providing the shader compilation log.
+    ///
+    /// # Safety
+    /// This function uses raw OpenGL calls (`gl::CreateShader`, `gl::ShaderSource`, `gl::CompileShader`) 
+    /// and assumes a valid OpenGL context is active.
     fn compile_shader(shader_path: &str, shader_type: u32) -> u32 {
         let error_string = format(format_args!("Unable to open shader file: {}", shader_path));
         let file = File::open(shader_path).expect(&error_string);
@@ -53,6 +115,24 @@ impl Shader {
         }
     }
 
+    /// **Creates and links an OpenGL shader program from vertex and fragment shaders.**
+    ///
+    /// This function takes the IDs of a compiled vertex shader and fragment shader, attaches them
+    /// to a new OpenGL program, links the program, and validates its compilation status.  
+    /// After linking, the individual shaders are deleted since they are no longer needed.
+    ///
+    /// # Returns
+    /// Returns the OpenGL program ID (`u32`) of the linked shader program.
+    ///
+    /// # Panics
+    /// - Panics if the program linking fails, providing the program link log via `check_compile_error`.
+    ///
+    /// # Safety
+    /// - Requires a valid OpenGL context to be active.
+    /// - Uses raw OpenGL calls (`gl::CreateProgram`, `gl::AttachShader`, `gl::LinkProgram`, `gl::UseProgram`, `gl::DeleteShader`).
+    ///
+    /// # Notes
+    /// - The function deletes the attached shaders after linking to free GPU resources.
     fn create_program(vertex_shader:u32,fragment_shader:u32) -> u32 {
         unsafe {
             let shader_program = gl::CreateProgram();
@@ -60,15 +140,35 @@ impl Shader {
             gl::AttachShader(shader_program, fragment_shader);
             gl::LinkProgram(shader_program);
             Self::check_compile_error(shader_program, "PROGRAM");
-            gl:: UseProgram(shader_program);
             gl::DeleteShader(vertex_shader);
             gl::DeleteShader(fragment_shader);
             shader_program
         }
     }
     
-    // utility function for checking shader compilation/linking errors.
-    // ------------------------------------------------------------------------
+    /// **Checks for compilation or linking errors in shaders or shader programs.**
+    ///
+    /// This utility function queries OpenGL to verify whether a shader or a shader program
+    /// compiled/linked successfully. If an error occurred, it retrieves the corresponding log
+    /// and panics with a detailed message.
+    ///
+    /// # Parameters
+    /// - `shader`: The OpenGL ID of the shader or shader program.
+    /// - `shader_type`: A string indicating the type; `"PROGRAM"` for programs, otherwise assumed to be a shader.
+    ///
+    /// # Behavior
+    /// - For shader programs (`shader_type == "PROGRAM"`):
+    ///     - Checks `LINK_STATUS` to determine if linking succeeded.
+    ///     - Retrieves the program info log if linking failed.
+    /// - For individual shaders (vertex, fragment, etc.):
+    ///     - Checks `COMPILE_STATUS` to determine if compilation succeeded.
+    ///     - Retrieves the shader info log if compilation failed.
+    ///
+    /// # Panics
+    /// - Panics if the shader or program failed to compile or link, with the OpenGL error log included.
+    ///
+    /// # Safety
+    /// - Requires a valid OpenGL context.
     fn check_compile_error(shader:u32, shader_type:&str) {
         let mut success = 0;
         let mut log_len = 0;
@@ -118,7 +218,12 @@ impl Shader {
 
     }
 
-
+    /// **Retrieves the location of a uniform variable in the shader program.**
+    ///
+    /// This function checks whether the requested uniform's location is already cached
+    /// in the internal `HashMap`. If it is, the cached value is returned. Otherwise,
+    /// it queries OpenGL using `gl::GetUniformLocation`, stores the result in the cache,
+    /// and returns the location.
     fn get_uniform_location(&mut self, uniform_name :&str) -> i32 {
         if let Some(&loc) = self.uniforms.get(uniform_name) {
             return loc;
@@ -132,16 +237,16 @@ impl Shader {
         self.uniforms.insert(uniform_name.to_string(), location);
         location
     }
-    // activate the shader
-    // ------------------------------------------------------------------------
+    
+    /// Activates the shader program for subsequent rendering commands.
     pub fn use_program(&self) 
     { 
         unsafe {
             gl::UseProgram(self.program_id); 
         }
     }
-    // utility uniform functions
-    // ------------------------------------------------------------------------
+
+    /// Sets a boolean uniform in the shader program.
     pub fn set_bool(&mut self,uniform_name:&str, value:bool)
     {         
         let loc = self.get_uniform_location(uniform_name);
@@ -149,15 +254,17 @@ impl Shader {
             gl::Uniform1i(loc, value as i32);
         }
     }
-    // ------------------------------------------------------------------------
+    
+    /// Sets an integer uniform in the shader program.
     pub fn set_int(&mut self,uniform_name:&str, value:i32) 
     { 
         let loc = self.get_uniform_location(uniform_name);
         unsafe {        
             gl::Uniform1i(loc, value); 
         }    
-}
-    // ------------------------------------------------------------------------
+    }
+
+    /// Sets a floating-point uniform in the shader program.
     pub fn set_float(&mut self,uniform_name:&str, value:f32) 
     { 
         let loc = self.get_uniform_location(uniform_name);
