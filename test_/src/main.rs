@@ -710,6 +710,220 @@ fn a_flat_triangle() {
     }
 }
 
+fn finally_a_3d_box() {
+    const VERTICES: [Vertex;36] = [
+        [-0.5, -0.5, -0.5],
+        [0.5, -0.5, -0.5],
+        [0.5,  0.5, -0.5],
+        [0.5,  0.5, -0.5],
+        [-0.5,  0.5, -0.5],
+        [-0.5, -0.5, -0.5],
+
+        [-0.5, -0.5,  0.5],
+        [0.5, -0.5,  0.5],
+        [0.5,  0.5,  0.5],
+        [0.5,  0.5,  0.5],
+        [-0.5,  0.5,  0.5],
+        [-0.5, -0.5,  0.5],
+
+        [-0.5,  0.5,  0.5],
+        [-0.5,  0.5, -0.5],
+        [-0.5, -0.5, -0.5],
+        [-0.5, -0.5, -0.5],
+        [-0.5, -0.5,  0.5],
+        [-0.5,  0.5,  0.5],
+
+        [0.5,  0.5,  0.5],
+        [0.5,  0.5, -0.5],
+        [0.5, -0.5, -0.5],
+        [0.5, -0.5, -0.5],
+        [0.5, -0.5,  0.5],
+        [0.5,  0.5,  0.5],
+
+        [-0.5, -0.5, -0.5],
+        [0.5, -0.5, -0.5],
+        [0.5, -0.5,  0.5],
+        [0.5, -0.5,  0.5],
+        [-0.5, -0.5,  0.5],
+        [-0.5, -0.5, -0.5],
+
+        [-0.5,  0.5, -0.5],
+        [0.5,  0.5, -0.5],
+        [0.5,  0.5,  0.5],
+        [0.5,  0.5,  0.5],
+        [-0.5,  0.5,  0.5],
+        [-0.5,  0.5, -0.5],
+    ];
+    const VERT_SHADER_3: &str = r#"#version 330 core
+    layout (location = 0) in vec3 pos;
+    uniform mat4 model;
+    uniform mat4 view;
+    uniform mat4 projection;
+    void main() {
+        gl_Position = projection*view*model* vec4(pos.x, pos.y, pos.z, 1.0);
+    }
+    "#;
+
+    const FRAG_SHADER_3: &str = r#"#version 330 core
+    out vec4 final_color;
+
+    void main() {
+        final_color =  vec4(1.0, 0.5, 0.2, 1.0);
+    }
+    "#;
+    let mut window_handler = WindowHandler::new();
+
+
+    unsafe {
+
+
+
+
+
+    let vertex_shader = gl::CreateShader(gl::VERTEX_SHADER);
+    assert_ne!(vertex_shader, 0);
+    
+       gl::ShaderSource(
+        vertex_shader,
+        1,
+        &(VERT_SHADER_3.as_bytes().as_ptr().cast()),
+        &(VERT_SHADER_3.len().try_into().unwrap()),
+        );
+    
+        gl::CompileShader(vertex_shader);
+    
+    let mut success = 0;
+    gl::GetShaderiv(vertex_shader, gl::COMPILE_STATUS, &mut success);
+    
+    if success == 0 {
+        let mut v: Vec<u8> = Vec::with_capacity(1024);
+        let mut log_len = 0_i32;
+        gl::GetShaderInfoLog(
+        vertex_shader,
+        1024,
+        &mut log_len,
+        v.as_mut_ptr().cast(),
+        );
+        v.set_len(log_len.try_into().unwrap());
+        panic!("Vertex Compile Error: {}", String::from_utf8_lossy(&v));
+    }
+
+     let fragment_shader = gl::CreateShader(gl::FRAGMENT_SHADER);
+    assert_ne!(fragment_shader, 0);
+
+    gl::ShaderSource(
+        fragment_shader,
+        1,
+        &(FRAG_SHADER_3.as_bytes().as_ptr().cast()),
+        &(FRAG_SHADER_3.len().try_into().unwrap()),
+    );
+
+    gl::CompileShader(fragment_shader);
+
+
+
+    let mut success = 0;
+    gl::GetShaderiv(fragment_shader, gl::COMPILE_STATUS, &mut success);
+    if success == 0 {
+        let mut v: Vec<u8> = Vec::with_capacity(1024);
+        let mut log_len = 0_i32;
+        gl::GetShaderInfoLog(
+        fragment_shader,
+        1024,
+        &mut log_len,
+        v.as_mut_ptr().cast(),
+        );
+        v.set_len(log_len.try_into().unwrap());
+        panic!("Fragment Compile Error: {}", String::from_utf8_lossy(&v));
+    }
+
+    let shader_program = gl::CreateProgram();
+    gl::AttachShader(shader_program, vertex_shader);
+    gl::AttachShader(shader_program, fragment_shader);
+    gl::LinkProgram(shader_program);
+    gl::UseProgram(shader_program);
+
+
+
+    let mut model = glm::mat4(
+        1.0, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        0.0, 0.0, 0.0, 1.0,
+    );
+    model = glm::ext::rotate(&model,glm::radians(-75.0),glm::vec3(1.0,0.0,0.0));
+
+    
+    let mut view = glm::mat4(
+        1.0, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        0.0, 0.0, 0.0, 1.0,
+    );
+    view = glm::ext::translate(&view,glm::vec3(0.0,0.0,-3.0));
+    let mut projection = glm::mat4(
+        0.0, 0.0, 0.0, 0.0,
+        0.0, 0.0, 0.0, 0.0,
+        0.0, 0.0, 0.0, 0.0,
+        0.0, 0.0, 0.0, 0.0,
+    );
+    projection= glm::ext::perspective(glm::radians(45.0),800.0/600.0,0.1,100.0);
+
+    let modelLoc = gl::GetUniformLocation(shader_program, CString::new("model").unwrap().as_ptr());
+    gl::UniformMatrix4fv(modelLoc, 1, gl::FALSE, &model[0][0]);
+    let viewlLoc = gl::GetUniformLocation(shader_program, CString::new("view").unwrap().as_ptr());
+    gl::UniformMatrix4fv(viewlLoc, 1, gl::FALSE, &view[0][0]);
+    let projectionLoc = gl::GetUniformLocation(shader_program, CString::new("projection").unwrap().as_ptr());
+    gl::UniformMatrix4fv(projectionLoc, 1, gl::FALSE, &projection[0][0]);
+
+
+    
+
+
+
+
+
+
+        let mut vbo : u32 = 0; //vertex buffer object
+        gl::GenBuffers(1,&mut vbo);
+        
+        let mut vao = 0; //Vertex array object
+        gl::GenVertexArrays(1,&mut vao);
+        assert_ne!(vao,0);
+
+        gl::BindVertexArray(vao);
+
+        gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
+        gl::BufferData(gl::ARRAY_BUFFER, size_of_val(&VERTICES) as isize,
+                VERTICES.as_ptr().cast(),gl::STATIC_DRAW);
+
+
+        gl::VertexAttribPointer(0,3,gl::FLOAT,gl::FALSE,
+                (size_of::<Vertex>()).try_into().unwrap(),0 as *const _,);
+        gl::EnableVertexAttribArray(0); 
+
+        gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
+
+    'running: loop {
+        for e in window_handler.event_pump().poll_iter() {
+            if let Event::Quit { .. } = e {
+                break 'running;
+            }
+        }
+            gl::ClearColor(0.2, 0.3, 0.3, 1.0);
+            gl::Clear(gl::COLOR_BUFFER_BIT);
+
+            gl::UseProgram(shader_program);
+            gl::BindVertexArray(vao);
+            gl::DrawArrays(gl::TRIANGLES, 0, 60);
+
+        window_handler.window().gl_swap_window();
+     }
+                
+    }
+}
+
 fn main() {
-    a_flat_triangle();
+    finally_a_3d_box();
+
 }
