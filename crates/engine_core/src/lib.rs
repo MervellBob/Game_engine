@@ -44,7 +44,10 @@ fn start_game_loop(mut window_handler:WindowHandler) {
     let _enter = game_loop_span.enter();
     info!("Starting game loop");
 
-    let shader_program = Shader::new();
+    let shader_program = Shader::new(
+        "/src/shaders/test_shader/vertex_1.glsl",
+        "/src/shaders/test_shader/fragment_1.glsl"
+    );
     let vao = tempo_prepare_triangle();
 
     let mut event_manager:EventManager = EventManager::new();

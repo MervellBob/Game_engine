@@ -58,12 +58,12 @@ impl Shader {
     /// - Panics if a shader file cannot be opened.
     /// - Panics if shader compilation fails, providing the compilation log.
     /// - Panics if program linking fails, providing the link log.
-    pub fn new() -> Self {
+    pub fn new(vertex_path: &str, fragment_path: &str) -> Self {
         let span = span!(Level::INFO, "Creating new shader program");
         let _enter = span.enter();
 
-        let vertex_path = format!("{}/src/shaders/test_shader/vertex_1.glsl", env!("CARGO_MANIFEST_DIR"));
-        let fragment_path: String = format!("{}/src/shaders/test_shader/fragment_1.glsl", env!("CARGO_MANIFEST_DIR"));
+        let vertex_path = format!("{}/{}", env!("CARGO_MANIFEST_DIR"),vertex_path);
+        let fragment_path: String = format!("{}/{}", env!("CARGO_MANIFEST_DIR"),fragment_path);
 
         let vertex_shader = Self::compile_shader(&vertex_path,gl::VERTEX_SHADER);
         let fragment_shader = Self::compile_shader(&fragment_path,gl::FRAGMENT_SHADER);
