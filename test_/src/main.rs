@@ -1,13 +1,10 @@
-use sdl3::video::GLProfile;
-use sdl3::event::Event;
-use std::ffi::c_void;
 use std::ffi::CString;
-
 use events::sdl_binding::event_manager::EventManager;
 use events::sdl_binding::window_events::WindowEvent;
 use std::time::Duration;
 use rendering::shaders::shaders_utility::Shader;
 use rendering::window_handler::window_handler::WindowHandler;
+use std::time::Instant;
 
 
 
@@ -31,10 +28,12 @@ fn start_game_loop(mut window_handler:WindowHandler) {
         "/src/shaders/test_shader/vertex_2.glsl",
         "/src/shaders/test_shader/fragment_1.glsl"
     );
-    let vao = prepare_3d_box(&shader_program);
+    let vao = prepare_3d_box();
 
     let mut event_manager:EventManager = EventManager::new();
     let mut game_running = true;
+    let start = Instant::now();
+
     while game_running {
         {
             let event_pump = window_handler.event_pump();
@@ -42,7 +41,8 @@ fn start_game_loop(mut window_handler:WindowHandler) {
         }
         game_running = !check_closed_requested(& mut event_manager);
 
-        draw_3d_box(&mut window_handler,&shader_program,vao);
+        let elapsed = start.elapsed().as_secs_f32();
+        draw_3d_box(&mut window_handler,&shader_program,vao,elapsed);
 
         ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 20));
         // Sleep is not accurate in timing it has a 1ms to 15 ms overshoot apparently, and 1/20th of a sec is ~50 ms 
@@ -70,6 +70,7 @@ fn check_closed_requested(event_manager: & mut EventManager) -> bool {
 type Vertex = [f32; 3];
 
 //uses vertex 1 and fragment_1
+#[allow(dead_code)]
 fn draw_hello_triangle(window_handler:&mut WindowHandler, shader_program:&Shader, vao:u32) {
     unsafe {
         gl::ClearColor(0.2, 0.3, 0.3, 1.0);
@@ -83,7 +84,7 @@ fn draw_hello_triangle(window_handler:&mut WindowHandler, shader_program:&Shader
     }
 }
 
-
+#[allow(dead_code)]
 fn prepare_hello_triangle() -> u32{
     const VERTICES: [Vertex; 6] = [
     [ 0.5, -0.5, 0.0], // position 0
@@ -134,10 +135,8 @@ fn prepare_hello_triangle() -> u32{
     }
 }
 //uses vertex 2 and fragment1
-
-fn prepare_3d_box(shader:&Shader) -> u32{
-    let shader_program = shader.program_id;
-
+#[allow(dead_code)]
+fn prepare_3d_box() -> u32{
     const VERTICES: [Vertex;72] = [//alternates position and colors
         [-0.5, -0.5, -0.5],
         [0.20, 0.85, 0.90],
@@ -217,42 +216,18 @@ fn prepare_3d_box(shader:&Shader) -> u32{
         [-0.5,  0.5, -0.5],
         [0.95, 0.85, 0.25],
     ];
-
-    let mut model = glm::mat4(
-        1.0, 0.0, 0.0, 0.0,
-        0.0, 1.0, 0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0,
-        0.0, 0.0, 0.0, 1.0,
-    );
-    let mut view = glm::mat4(
-        1.0, 0.0, 0.0, 0.0,
-        0.0, 1.0, 0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0,
-        0.0, 0.0, 0.0, 1.0,
-    );
-    //Projection created underneath
-
-    shader.use_program();
-
     unsafe {
-        
-    model = glm::ext::rotate(&model,glm::radians(-75.0),glm::vec3(1.0,0.0,0.0));
-
-    view = glm::ext::translate(&view,glm::vec3(0.0,0.0,-3.0));
-    
-    let projection= glm::ext::perspective(glm::radians(45.0),600.0/600.0,0.1,100.0);
-
-    let model_loc = gl::GetUniformLocation(shader_program, CString::new("model").unwrap().as_ptr());
-    gl::UniformMatrix4fv(model_loc, 1, gl::FALSE, &model[0][0]);
-    let view_loc = gl::GetUniformLocation(shader_program, CString::new("view").unwrap().as_ptr());
-    gl::UniformMatrix4fv(view_loc, 1, gl::FALSE, &view[0][0]);
-    let projection_loc = gl::GetUniformLocation(shader_program, CString::new("projection").unwrap().as_ptr());
-    gl::UniformMatrix4fv(projection_loc, 1, gl::FALSE, &projection[0][0]);
 
     let mut vbo : u32 = 0; //vertex buffer object
+    let mut vao = 0; //Vertex array object
+
+    gl::GenVertexArrays(1,&mut vao);
+    assert_ne!(vao,0);
+
     gl::GenBuffers(1,&mut vbo);
         assert_ne!(vbo,0);
 
+    gl::BindVertexArray(vao);
     gl::BindBuffer(gl::ARRAY_BUFFER,vbo);
     gl::BufferData(
         gl::ARRAY_BUFFER,
@@ -260,16 +235,6 @@ fn prepare_3d_box(shader:&Shader) -> u32{
         VERTICES.as_ptr().cast(),
         gl::STATIC_DRAW,
     );
-
-    let mut vao = 0; //Vertex array object
-    gl::GenVertexArrays(1,&mut vao);
-    assert_ne!(vao,0);
-    
-    let mut vao = 0; //Vertex array object
-    gl::GenVertexArrays(1,&mut vao);
-    assert_ne!(vao,0);
-
-    gl::BindVertexArray(vao);
 
     gl::VertexAttribPointer(
         0,
@@ -293,16 +258,47 @@ fn prepare_3d_box(shader:&Shader) -> u32{
     }
 }
 
-fn draw_3d_box(window_handler:&mut WindowHandler, shader_program:&Shader, vao:u32) {
+#[allow(dead_code)]
+fn draw_3d_box(window_handler:&mut WindowHandler, shader:&Shader, vao:u32,elapsed_time: f32) {
+    
+    
     unsafe {
         gl::ClearColor(0.2, 0.3, 0.3, 1.0);
         gl::Clear(gl::COLOR_BUFFER_BIT);
 
-        shader_program.use_program();
+        shader.use_program();
+        let shader_program = shader.program_id;
+
+        let mut model = glm::mat4(
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+            0.0, 0.0, 0.0, 1.0,
+        );
+
+        model = glm::ext::rotate(&model, elapsed_time/2.0 * glm::radians(50.0), glm::vec3(0.5, 1.0, 0.0));  
+        
+        let mut view = glm::mat4(
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+            0.0, 0.0, 0.0, 1.0,
+        );
+        view = glm::ext::translate(&view,glm::vec3(0.0,0.0,-3.0));
+        let projection= glm::ext::perspective(glm::radians(45.0),600.0/600.0,0.1,100.0);
+
+
+        let model_loc = gl::GetUniformLocation(shader_program, CString::new("model").unwrap().as_ptr());
+        gl::UniformMatrix4fv(model_loc, 1, gl::FALSE, &model[0][0]);
+        let view_loc = gl::GetUniformLocation(shader_program, CString::new("view").unwrap().as_ptr());
+        gl::UniformMatrix4fv(view_loc, 1, gl::FALSE, &view[0][0]);
+        let projection_loc = gl::GetUniformLocation(shader_program, CString::new("projection").unwrap().as_ptr());
+        gl::UniformMatrix4fv(projection_loc, 1, gl::FALSE, &projection[0][0]);
+
+
         gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
         gl::BindVertexArray(vao);
         gl::DrawArrays(gl::TRIANGLES, 0, 72);
-
         window_handler.window().gl_swap_window();
     }
 }
