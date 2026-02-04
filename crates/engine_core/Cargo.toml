@@ -8,6 +8,7 @@ override = []
 
 [dependencies]
 events = { path = "../events" }
-window = { path = "../window" }
+rendering = {path = "../rendering"}
 tracing = "0.1.44"
+gl = "0.14.0"
 
