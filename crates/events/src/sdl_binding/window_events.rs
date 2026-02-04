@@ -1,4 +1,3 @@
-
 /// # Window Event Enum
 ///
 /// This enum represents all possible types of events related to the application window.

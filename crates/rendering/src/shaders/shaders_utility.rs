@@ -1,15 +1,14 @@
-use std::fs::File;
 use asset::asset::Asset;
 use asset::text::Text;
 use std::collections::HashMap;
 use std::ffi::CString;
-use tracing::{Level, error, info, span};
-
+use std::fs::File;
+use tracing::{error, info, span, Level};
 
 /// **Shader**
 ///
 /// A utility structure for managing OpenGL shaders.  
-/// This struct **encapsulates shader compilation and program linking**, 
+/// This struct **encapsulates shader compilation and program linking**,
 /// and provides convenient methods for **setting and caching uniform variables**.
 ///
 /// # Purpose
@@ -35,16 +34,14 @@ use tracing::{Level, error, info, span};
 /// - Intended for use with OpenGL 3.3 core profile.
 /// - The struct does **not handle shader reloading**; create a new instance for updated shaders.
 pub struct Shader {
-    pub program_id:u32, 
+    pub program_id: u32,
     uniforms: HashMap<String, i32>,
-
 }
 
 impl Shader {
-
     /// **Creates a new `Shader` instance.**
     ///
-    /// This constructor compiles the vertex and fragment shaders located in 
+    /// This constructor compiles the vertex and fragment shaders located in
     /// the `src/shaders/test_shader/` directory and links them into an OpenGL shader program.  
     /// The resulting `Shader` object holds the `program_id` and initializes a uniform cache.
     ///
@@ -62,23 +59,23 @@ impl Shader {
         let span = span!(Level::INFO, "Creating new shader program");
         let _enter = span.enter();
 
-        let vertex_path = format!("{}/{}", env!("CARGO_MANIFEST_DIR"),vertex_path);
-        let fragment_path: String = format!("{}/{}", env!("CARGO_MANIFEST_DIR"),fragment_path);
+        let vertex_path = format!("{}/{}", env!("CARGO_MANIFEST_DIR"), vertex_path);
+        let fragment_path: String = format!("{}/{}", env!("CARGO_MANIFEST_DIR"), fragment_path);
 
-        let vertex_shader = Self::compile_shader(&vertex_path,gl::VERTEX_SHADER);
-        let fragment_shader = Self::compile_shader(&fragment_path,gl::FRAGMENT_SHADER);
+        let vertex_shader = Self::compile_shader(&vertex_path, gl::VERTEX_SHADER);
+        let fragment_shader = Self::compile_shader(&fragment_path, gl::FRAGMENT_SHADER);
 
-        let shader_program = Self::create_program(vertex_shader,fragment_shader);
+        let shader_program = Self::create_program(vertex_shader, fragment_shader);
 
-        Self { 
-            program_id:shader_program,
-            uniforms: HashMap::new()
+        Self {
+            program_id: shader_program,
+            uniforms: HashMap::new(),
         }
     }
 
     /// **Compiles a shader from a source file.**
     ///
-    /// This function reads a GLSL shader source file from the provided `shader_path` and compiles it 
+    /// This function reads a GLSL shader source file from the provided `shader_path` and compiles it
     /// into an OpenGL shader object of the specified `shader_type` (e.g., `gl::VERTEX_SHADER` or `gl::FRAGMENT_SHADER`).
     ///
     /// # Returns
@@ -91,7 +88,7 @@ impl Shader {
     /// - Panics if shader compilation fails, providing the shader compilation log.
     ///
     /// # Safety
-    /// This function uses raw OpenGL calls (`gl::CreateShader`, `gl::ShaderSource`, `gl::CompileShader`) 
+    /// This function uses raw OpenGL calls (`gl::CreateShader`, `gl::ShaderSource`, `gl::CompileShader`)
     /// and assumes a valid OpenGL context is active.
     fn compile_shader(shader_path: &str, shader_type: u32) -> u32 {
         let shader_type_str = match shader_type {
@@ -101,8 +98,12 @@ impl Shader {
             _ => "UNKNOWN",
         };
 
-
-        let span = tracing::span!(tracing::Level::INFO, "Compiling shader", path = shader_path, shader_type = shader_type_str);
+        let span = tracing::span!(
+            tracing::Level::INFO,
+            "Compiling shader",
+            path = shader_path,
+            shader_type = shader_type_str
+        );
         let _enter = span.enter();
 
         // Attempt to open the file
@@ -110,7 +111,7 @@ impl Shader {
             Ok(f) => {
                 info!("Shader file opened successfully");
                 f
-            },
+            }
             Err(e) => {
                 error!("Unable to open shader file {}: {}", shader_path, e);
                 panic!();
@@ -136,9 +137,12 @@ impl Shader {
                 error!("Failed to create OpenGL shader object");
                 panic!();
             } else {
-                info!(shader = shader, shader_type = shader_type_str, "Shader object created");
+                info!(
+                    shader = shader,
+                    shader_type = shader_type_str,
+                    "Shader object created"
+                );
             }
-
 
             gl::ShaderSource(
                 shader,
@@ -149,7 +153,11 @@ impl Shader {
 
             gl::CompileShader(shader);
             Self::check_compile_error(shader, "NOT PROGRAM");
-            info!(shader = shader,shader_type = shader_type_str, "Shader compiled successfully");
+            info!(
+                shader = shader,
+                shader_type = shader_type_str,
+                "Shader compiled successfully"
+            );
             shader
         }
     }
@@ -172,10 +180,14 @@ impl Shader {
     ///
     /// # Notes
     /// - The function deletes the attached shaders after linking to free GPU resources.
-    fn create_program(vertex_shader:u32,fragment_shader:u32) -> u32 {  
+    fn create_program(vertex_shader: u32, fragment_shader: u32) -> u32 {
         unsafe {
             let shader_program = gl::CreateProgram();
-            let span = tracing::span!(tracing::Level::INFO, "Linking program", shader_program = shader_program);
+            let span = tracing::span!(
+                tracing::Level::INFO,
+                "Linking program",
+                shader_program = shader_program
+            );
             let _enter = span.enter();
 
             gl::AttachShader(shader_program, vertex_shader);
@@ -187,7 +199,7 @@ impl Shader {
             shader_program
         }
     }
-    
+
     /// **Checks for compilation or linking errors in shaders or shader programs.**
     ///
     /// This utility function queries OpenGL to verify whether a shader or a shader program
@@ -211,55 +223,48 @@ impl Shader {
     ///
     /// # Safety
     /// - Requires a valid OpenGL context.
-    fn check_compile_error(shader:u32, shader_type:&str) {
+    fn check_compile_error(shader: u32, shader_type: &str) {
         let mut success = 0;
         let mut log_len = 0;
         match shader_type {
-            "PROGRAM" => {
-                unsafe {
-                    gl::GetProgramiv(shader,gl::LINK_STATUS, &mut success);
-                    if success == 0 {
-                        gl::GetProgramiv(shader,gl::INFO_LOG_LENGTH, &mut log_len);
-                        let mut log = Vec::with_capacity(log_len as usize);
-                        log.resize(log_len as usize, 0);
+            "PROGRAM" => unsafe {
+                gl::GetProgramiv(shader, gl::LINK_STATUS, &mut success);
+                if success == 0 {
+                    gl::GetProgramiv(shader, gl::INFO_LOG_LENGTH, &mut log_len);
+                    let mut log = Vec::with_capacity(log_len as usize);
+                    log.resize(log_len as usize, 0);
 
-                        gl::GetProgramInfoLog(
+                    gl::GetProgramInfoLog(
                         shader,
                         log_len,
                         std::ptr::null_mut(),
                         log.as_mut_ptr().cast(),
-                        );
-                        let log = String::from_utf8_lossy(&log);
-                        error!("Program link error:\n {}", log);
-                        panic!();
-                    }
+                    );
+                    let log = String::from_utf8_lossy(&log);
+                    error!("Program link error:\n {}", log);
+                    panic!();
                 }
-            }
-            _ => {
-                unsafe {
-                    gl::GetShaderiv(shader, gl::COMPILE_STATUS, &mut success);
-                    if success == 0 {
-                        
-                        gl::GetShaderiv(shader, gl::INFO_LOG_LENGTH, &mut log_len);
-                        let mut log = Vec::with_capacity(log_len as usize);
-                        log.resize(log_len as usize, 0);
+            },
+            _ => unsafe {
+                gl::GetShaderiv(shader, gl::COMPILE_STATUS, &mut success);
+                if success == 0 {
+                    gl::GetShaderiv(shader, gl::INFO_LOG_LENGTH, &mut log_len);
+                    let mut log = Vec::with_capacity(log_len as usize);
+                    log.resize(log_len as usize, 0);
 
-                        gl::GetShaderInfoLog(
-                            shader,
-                            log_len,
-                            std::ptr::null_mut(),
-                            log.as_mut_ptr().cast(),
-                        );
+                    gl::GetShaderInfoLog(
+                        shader,
+                        log_len,
+                        std::ptr::null_mut(),
+                        log.as_mut_ptr().cast(),
+                    );
 
-                        let log = String::from_utf8_lossy(&log);
-                        error!("Shader compile error:\n {}", log);
-                        panic!();
-                    }
+                    let log = String::from_utf8_lossy(&log);
+                    error!("Shader compile error:\n {}", log);
+                    panic!();
                 }
-            }
-            
+            },
         }
-
     }
 
     /// **Retrieves the location of a uniform variable in the shader program.**
@@ -268,58 +273,46 @@ impl Shader {
     /// in the internal `HashMap`. If it is, the cached value is returned. Otherwise,
     /// it queries OpenGL using `gl::GetUniformLocation`, stores the result in the cache,
     /// and returns the location.
-    fn get_uniform_location(&mut self, uniform_name :&str) -> i32 {
+    fn get_uniform_location(&mut self, uniform_name: &str) -> i32 {
         if let Some(&loc) = self.uniforms.get(uniform_name) {
             return loc;
         }
         let c_uniform_name = CString::new(uniform_name).unwrap();
 
-        let location = unsafe {
-            gl::GetUniformLocation(self.program_id, c_uniform_name.as_ptr())
-        };
+        let location = unsafe { gl::GetUniformLocation(self.program_id, c_uniform_name.as_ptr()) };
 
         self.uniforms.insert(uniform_name.to_string(), location);
         location
     }
-    
+
     /// Activates the shader program for subsequent rendering commands.
-    pub fn use_program(&self) 
-    { 
+    pub fn use_program(&self) {
         unsafe {
-            gl::UseProgram(self.program_id); 
+            gl::UseProgram(self.program_id);
         }
     }
 
     /// Sets a boolean uniform in the shader program.
-    pub fn set_bool(&mut self,uniform_name:&str, value:bool)
-    {         
+    pub fn set_bool(&mut self, uniform_name: &str, value: bool) {
         let loc = self.get_uniform_location(uniform_name);
         unsafe {
             gl::Uniform1i(loc, value as i32);
         }
     }
-    
+
     /// Sets an integer uniform in the shader program.
-    pub fn set_int(&mut self,uniform_name:&str, value:i32) 
-    { 
+    pub fn set_int(&mut self, uniform_name: &str, value: i32) {
         let loc = self.get_uniform_location(uniform_name);
-        unsafe {        
-            gl::Uniform1i(loc, value); 
-        }    
+        unsafe {
+            gl::Uniform1i(loc, value);
+        }
     }
 
     /// Sets a floating-point uniform in the shader program.
-    pub fn set_float(&mut self,uniform_name:&str, value:f32) 
-    { 
+    pub fn set_float(&mut self, uniform_name: &str, value: f32) {
         let loc = self.get_uniform_location(uniform_name);
         unsafe {
-            gl::Uniform1f(loc, value); 
-        }    
+            gl::Uniform1f(loc, value);
+        }
     }
-}   
-
-       
-
-   
-
-    
+}

@@ -1,7 +1,6 @@
 use engine_core;
 use tracing_subscriber::fmt::format::FmtSpan;
 
-
 pub fn main() {
     init_tracing_subscriber();
     engine_core::start_engine();

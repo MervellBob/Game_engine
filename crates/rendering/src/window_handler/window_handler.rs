@@ -1,10 +1,10 @@
-use std::ffi::c_void;
-use sdl3::EventPump;
+use sdl3::video::GLContext;
 use sdl3::video::GLProfile;
 use sdl3::video::Window;
+use sdl3::EventPump;
 use sdl3::Sdl;
 use sdl3::VideoSubsystem;
-use sdl3::video::GLContext;
+use std::ffi::c_void;
 
 /// Handles the creation and management of the main game window.
 ///
@@ -57,13 +57,13 @@ impl WindowHandler {
             .unwrap();
 
         let gl_context = window.gl_create_context().unwrap();
-        
+
         gl::load_with(|s| {
-        video_subsystem
-            .gl_get_proc_address(s)
-            .map(|f| f as *const c_void)
-            .unwrap_or(std::ptr::null())
-        }); 
+            video_subsystem
+                .gl_get_proc_address(s)
+                .map(|f| f as *const c_void)
+                .unwrap_or(std::ptr::null())
+        });
 
         let event_pump = sdl_context.event_pump().unwrap();
 
@@ -75,7 +75,7 @@ impl WindowHandler {
             video_subsystem,
             sdl_event_pump: event_pump,
             window: window,
-            gl_context: gl_context
+            gl_context: gl_context,
         }
     }
 
@@ -106,6 +106,3 @@ impl WindowHandler {
         &self.video_subsystem
     }
 }
-
-
-

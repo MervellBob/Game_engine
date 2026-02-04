@@ -1,13 +1,13 @@
-use std::fmt;
 use bitflags::bitflags;
 use num_enum::TryFromPrimitive;
+use std::fmt;
 
 /// # User Input Event Enum
 ///
 /// This enum represents all events related to user input,
 /// more specifically mouse and keyboard interactions.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum InputEvent{
+pub enum InputEvent {
     MouseMotion {
         timestamp: u64,
         window_id: u32,
@@ -65,7 +65,7 @@ pub enum InputEvent{
         repeat: bool,
         which: u32,
         raw: u16,
-    }
+    },
 }
 
 /// # Mouse Button State
@@ -85,7 +85,7 @@ pub struct MouseButtonState {
 ///
 /// This enum represents the different mouse buttons,
 /// used to identify which button triggered a mouse action.
-#[derive(Debug, Copy, Clone, PartialEq,TryFromPrimitive)]
+#[derive(Debug, Copy, Clone, PartialEq, TryFromPrimitive)]
 #[repr(u8)]
 pub enum MouseButton {
     Unknown = 0,
@@ -618,7 +618,6 @@ pub enum Scancode {
     Count = 512,
 }
 
-
 bitflags! {
     /// # Key Modifier Flags
     ///
@@ -645,4 +644,4 @@ impl fmt::Display for Keymod {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:04x}", *self)
     }
-} 
+}
