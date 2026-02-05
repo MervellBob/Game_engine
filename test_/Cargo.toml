@@ -5,8 +5,8 @@ edition = "2024"
 
 [dependencies]
 gl = "0.14.0"
-glm = "0.3.0"
 sdl3 = "=0.17.3"
 rendering = {path = "../crates/rendering"}
 events = {path = "../crates/events"}
+nalgebra-glm = "0.20.0"
 
