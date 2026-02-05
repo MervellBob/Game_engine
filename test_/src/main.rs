@@ -5,6 +5,9 @@ use rendering::window_handler::window_handler::WindowHandler;
 use std::ffi::CString;
 use std::time::Duration;
 use std::time::Instant;
+use nalgebra_glm as glm; 
+use std::f32::consts::PI;  
+
 
 fn main() {
     let window_handler = create_app_window();
@@ -39,7 +42,7 @@ fn start_game_loop(mut window_handler: WindowHandler) {
         game_running = !check_closed_requested(&mut event_manager);
 
         let elapsed = start.elapsed().as_secs_f32();
-        draw_3d_box(&mut window_handler, &shader_program, vao, elapsed);
+        draw_3d_boxes(&mut window_handler, &shader_program, vao, elapsed);
 
         ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
         // Sleep is not accurate in timing it has a 1ms to 15 ms overshoot apparently, and 1/20th of a sec is ~50 ms
@@ -255,44 +258,81 @@ fn prepare_3d_box() -> u32 {
     }
 }
 
+
 #[allow(dead_code)]
-fn draw_3d_box(window_handler: &mut WindowHandler, shader: &Shader, vao: u32, elapsed_time: f32) {
+fn draw_3d_boxes(window_handler: &mut WindowHandler, shader: &Shader, vao: u32, elapsed_time: f32) {
+    
+    let cube_positions: [glm::Vec3; 10] = [
+    glm::vec3( 0.0,  0.0,  0.0), 
+    glm::vec3( 2.0,  5.0, -15.0), 
+    glm::vec3(-1.5, -2.2, -2.5),  
+    glm::vec3(-3.8, -2.0, -12.3),  
+    glm::vec3( 2.4, -0.4, -3.5),  
+    glm::vec3(-1.7,  3.0, -7.5),  
+    glm::vec3( 1.3, -2.0, -2.5),  
+    glm::vec3( 1.5,  2.0, -2.5), 
+    glm::vec3( 1.5,  0.2, -1.5), 
+    glm::vec3(-1.3,  1.0, -1.5)  
+    ];
+
     unsafe {
         gl::ClearColor(0.2, 0.3, 0.3, 1.0);
         gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
         shader.use_program();
         let shader_program = shader.program_id;
 
-        let mut model = glm::mat4(
-            1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
-        );
+        // let mut model = glm::mat4(
+        //     1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+        // );
 
-        model = glm::ext::rotate(
-            &model,
-            elapsed_time * glm::radians(50.0),
-            glm::vec3(0.5, 1.0, 0.0),
-        );
+        // model = glm::rotate(
+        //     &model,
+        //     153.6 * PI/2.0,
+        //     &glm::vec3(0.5, 1.0, 0.0),
+        // );
 
         let mut view = glm::mat4(
             1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
         );
-        view = glm::ext::translate(&view, glm::vec3(0.0, 0.0, -3.0));
-        let projection = glm::ext::perspective(glm::radians(45.0), 600.0 / 600.0, 0.1, 100.0);
-
+        view = glm::translate(&view, &glm::vec3(0.0, 0.0, -3.0));
+        let projection_persp =  glm::perspective(PI/3.0, 600.0 / 600.0, 0.1, 100.0);
+        let projection_ortho = glm::ortho(-1.37,1.37,-1.37,1.37,0.1,100.0 );
+        let blend_ratio = (1.0+(1.0*elapsed_time).sin())/2.0;
+        let blended_mat = blend_matrices(projection_persp,projection_ortho,blend_ratio);
         let model_loc =
             gl::GetUniformLocation(shader_program, CString::new("model").unwrap().as_ptr());
-        gl::UniformMatrix4fv(model_loc, 1, gl::FALSE, &model[0][0]);
+        // gl::UniformMatrix4fv(model_loc, 1, gl::FALSE, model.as_ptr());
         let view_loc =
             gl::GetUniformLocation(shader_program, CString::new("view").unwrap().as_ptr());
-        gl::UniformMatrix4fv(view_loc, 1, gl::FALSE, &view[0][0]);
+        gl::UniformMatrix4fv(view_loc, 1, gl::FALSE, view.as_ptr());
         let projection_loc =
             gl::GetUniformLocation(shader_program, CString::new("projection").unwrap().as_ptr());
-        gl::UniformMatrix4fv(projection_loc, 1, gl::FALSE, &projection[0][0]);
+        gl::UniformMatrix4fv(projection_loc, 1, gl::FALSE, blended_mat.as_ptr());
 
         //gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
         gl::BindVertexArray(vao);
-        gl::Enable(gl::DEPTH_TEST);
-        gl::DrawArrays(gl::TRIANGLES, 0, 72);
+
+
+        for i in 0..10 {
+            let mut model = glm::mat4(
+            1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+            );
+            model = glm::translate(&model, &cube_positions[i]);
+            let angle = PI/8.0 * (1.0+(i as f32)); 
+            model = glm::rotate(&model, angle, &glm::vec3(1.0, 0.3, 0.5));
+            gl::UniformMatrix4fv(model_loc, 1, gl::FALSE, model.as_ptr());
+
+            gl::Enable(gl::DEPTH_TEST);
+            gl::DrawArrays(gl::TRIANGLES, 0, 72);
+        }
+
+
+        
         window_handler.window().gl_swap_window();
     }
+
+    fn blend_matrices(mat_a: glm::Mat4, mat_b:glm::Mat4,blend_ratio:f32) ->glm::Mat4 {
+        return mat_a * blend_ratio + mat_b * (1.0-blend_ratio)
+    }
+
 }
