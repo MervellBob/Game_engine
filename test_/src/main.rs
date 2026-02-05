@@ -42,7 +42,7 @@ fn start_game_loop(mut window_handler: WindowHandler) {
         game_running = !check_closed_requested(&mut event_manager);
 
         let elapsed = start.elapsed().as_secs_f32();
-        draw_3d_box(&mut window_handler, &shader_program, vao, elapsed);
+        draw_3d_boxes(&mut window_handler, &shader_program, vao, elapsed);
 
         ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
         // Sleep is not accurate in timing it has a 1ms to 15 ms overshoot apparently, and 1/20th of a sec is ~50 ms
