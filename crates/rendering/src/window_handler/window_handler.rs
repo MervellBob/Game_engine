@@ -7,18 +7,6 @@ use sdl3::VideoSubsystem;
 use std::ffi::c_void;
 
 /// Handles the creation and management of the main game window.
-///
-/// `WindowHandler` wraps SDL3 functionality, providing a convenient interface
-/// to create a window, manage its canvas for rendering, and handle input events
-/// via an event pump.
-///
-/// # Example
-///
-/// ```rust,no_run
-/// let mut window_handler = WindowHandler::new("My Game".to_string(), 800, 600);
-/// let canvas = window_handler.canvas();
-/// let event_pump = window_handler.event_pump();
-/// ```
 pub struct WindowHandler {
     window_name: String,
     window_width: u32,
@@ -31,14 +19,6 @@ pub struct WindowHandler {
 }
 impl WindowHandler {
     /// Creates a new `WindowHandler` with the specified name and dimensions.
-    ///
-    /// This function initializes SDL3, creates a window, prepares a canvas for
-    /// rendering, and sets up an event pump to handle input and system events.
-    ///
-    /// # Panics
-    ///
-    /// This function will panic if SDL3 fails to initialize, or if window creation
-    /// or event pump setup fails.
     pub fn new(name: String, width: u32, height: u32) -> Self {
         let sdl_context = sdl3::init().unwrap();
         let video_subsystem = sdl_context.video().unwrap();
