@@ -9,8 +9,6 @@ use tracing::{info, info_span};
 ///
 /// This function initializes the window system, creates the main game window,
 /// and then starts the main game loop.  
-/// It blocks the current thread until the game loop exits (for example, when a
-/// close event is received).
 pub fn start_engine() {
     info!("Engine core has started!");
     let window_handler = create_app_window();
@@ -30,11 +28,6 @@ fn create_app_window() -> WindowHandler {
 }
 
 /// Starts the main game loop .
-///
-/// During each iteration of the loop, this function:
-/// - Processes incoming events via the event manager
-/// - Checks for a `close_requested` event to determine when to exit
-///
 /// The function blocks the current thread until the game loop terminates.
 fn start_game_loop(mut window_handler: WindowHandler) {
     let game_loop_span: tracing::Span = info_span!("Game loop",);
@@ -64,11 +57,9 @@ fn start_game_loop(mut window_handler: WindowHandler) {
     info!("Closing game loop")
 }
 
-/// Checks whether a close request event has occurred in the current event queue.
-///
+
 /// The function queries the event manager to see if the user or system has requested
 /// to close the application.  
-/// Returns `true` if such an event was detected, `false` otherwise.
 fn check_closed_requested(event_manager: &mut EventManager) -> bool {
     let window_queue = event_manager.window_events_mut();
     while !window_queue.is_empty() {
