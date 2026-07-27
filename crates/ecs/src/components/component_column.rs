@@ -9,7 +9,7 @@ pub(crate) struct Column<T: Component> {
 }
 
 impl<T: Component> Column<T> {
-    pub(crate) fn create_any() -> Box<dyn AnyColumn> {
+    pub(super) fn create_any() -> Box<dyn AnyColumn> {
         Box::new(Self { data: Vec::new() })
     }
 }

@@ -75,20 +75,20 @@ pub(crate) struct DeletionResult {
     pub(crate) swapped_entity: Option<(Entity, usize)>,
 }
 
-pub struct ArchetypeMatch {
+pub(crate) struct ArchetypeMatch {
     arch_len: usize,
     columns: Vec<NonNull<()>>,
 }
 
 impl ArchetypeMatch {
-    pub fn new(arch_len: usize, columns: Vec<NonNull<()>>) -> Self {
+    pub(crate) fn new(arch_len: usize, columns: Vec<NonNull<()>>) -> Self {
         Self { arch_len, columns }
     }
 
-    pub fn arch_len(&self) -> usize {
+    pub(crate) fn arch_len(&self) -> usize {
         self.arch_len
     }
-    pub fn columns(&self) -> &Vec<NonNull<()>> {
+    pub(crate) fn columns(&self) -> &Vec<NonNull<()>> {
         &self.columns
     }
 }

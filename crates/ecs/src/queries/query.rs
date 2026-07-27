@@ -10,7 +10,10 @@ use crate::{
     world::world::World,
 };
 
-pub struct Query<'a, P: QueryItems> {
+
+//not specified by rust code because unsafe but; A quuery access data owned infine by world, thus a query must not outlive world.
+// This is an invariant undocumented yet.
+pub(crate) struct Query<'a, P: QueryItems> {
     descriptor: &'a QueryDescriptor,
     _marker: PhantomData<P>,
 }
@@ -85,7 +88,7 @@ pub struct QueryDescriptor {
 }
 
 impl QueryDescriptor {
-    pub(crate) fn new(param_info: Vec<QueryItemInfo>) -> Self {
+    pub fn new(param_info: Vec<QueryItemInfo>) -> Self {
         let mut components = vec![];
         let mut mutables = vec![];
         for elt in param_info {

@@ -9,6 +9,7 @@ utils = { path = "crates/utils" }
 engine_core = { path = "crates/engine_core" }
 rendering = {path = "crates/rendering"}
 asset = { path= "crates/asset"}
+ecs = { path= "crates/ecs"}
 sdl3 = "=0.17.3"
 log = "0.4.29"
 tracing-log = "0.2.0"

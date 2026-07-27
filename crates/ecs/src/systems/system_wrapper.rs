@@ -14,7 +14,7 @@ pub enum ScheduleType {
     Physics,
 }
 
-pub(crate) fn system_runner<P: QueryItems, S: System<P>>(query_descriptor: &QueryDescriptor) {
+fn system_runner<P: QueryItems, S: System<P>>(query_descriptor: &QueryDescriptor) {
     let query = Query::<P>::from_descriptor(&query_descriptor);
     S::run(&query);
 }

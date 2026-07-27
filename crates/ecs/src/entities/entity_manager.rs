@@ -1,6 +1,6 @@
 use crate::entities::entity::Entity;
 
-pub struct EntityManager {
+pub(crate) struct EntityManager {
     next_id: u32,
     free_ids: Vec<u32>,
     generations: Vec<u32>,

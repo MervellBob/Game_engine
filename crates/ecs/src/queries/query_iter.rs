@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use crate::{archetypes::archetype::ArchetypeMatch, queries::query_items::QueryItems};
 
-pub struct QueryIter<'q, P: QueryItems> {
+pub(crate) struct QueryIter<'q, P: QueryItems> {
     matches: &'q [ArchetypeMatch],
     current_archetype: usize,
     current_row: usize,
